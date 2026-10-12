@@ -25,6 +25,7 @@ type PostgresConfig struct {
 
 type StorageConfig struct {
 	Endpoint        string        `env:"MINIO_ENDPOINT" env-default:"localhost:9000"`
+	PublicEndpoint  string        `env:"MINIO_PUBLIC_ENDPOINT" env-default:""`
 	AccessKeyID     string        `env:"MINIO_ACCESS_KEY" env-default:"minioadmin"`
 	SecretAccessKey string        `env:"MINIO_SECRET_KEY" env-default:"minioadmin"`
 	UseSSL          bool          `env:"MINIO_USE_SSL" env-default:"false"`

@@ -34,6 +34,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     volumes:
       - miniodata:/data
     networks:
@@ -70,6 +71,7 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${CATALOG_DB_NAME}?sslmode=disable
       - GRPC_PORT=:50052
       - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_USE_SSL=${MINIO_SECURE}

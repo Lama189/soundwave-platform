@@ -11,11 +11,12 @@ import (
 )
 
 type MinioStorage struct {
-	client       *minio.Client
-	rawBucket    string
-	audioBucket  string
-	coversBucket string
-	uploadExpiry time.Duration
+	client        *minio.Client
+	presignClient *minio.Client
+	rawBucket     string
+	audioBucket   string
+	coversBucket  string
+	uploadExpiry  time.Duration
 }
 
 func NewMinioStorage(ctx context.Context, cfg config.StorageConfig) (*MinioStorage, error) {
@@ -27,12 +28,27 @@ func NewMinioStorage(ctx context.Context, cfg config.StorageConfig) (*MinioStora
 		return nil, fmt.Errorf("init minio client: %w", err)
 	}
 
+	presignEndpoint := cfg.Endpoint
+	if cfg.PublicEndpoint != "" {
+		presignEndpoint = cfg.PublicEndpoint
+	}
+
+	presignClient, err := minio.New(presignEndpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
+		Secure: cfg.UseSSL,
+		Region: "us-east-1",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init minio presign client: %w", err)
+	}
+
 	storage := &MinioStorage{
-		client:       client,
-		rawBucket:    cfg.RawBucket,
-		audioBucket:  cfg.AudioBucket,
-		coversBucket: cfg.CoversBucket,
-		uploadExpiry: cfg.UploadExpiry,
+		client:        client,
+		presignClient: presignClient,
+		rawBucket:     cfg.RawBucket,
+		audioBucket:   cfg.AudioBucket,
+		coversBucket:  cfg.CoversBucket,
+		uploadExpiry:  cfg.UploadExpiry,
 	}
 
 	if err := storage.ensureBuckets(ctx); err != nil {
@@ -43,7 +59,7 @@ func NewMinioStorage(ctx context.Context, cfg config.StorageConfig) (*MinioStora
 }
 
 func (s *MinioStorage) GenerateUploadURL(ctx context.Context, key string) (string, error) {
-	presignedURL, err := s.client.PresignedPutObject(ctx, s.rawBucket, key, s.uploadExpiry)
+	presignedURL, err := s.presignClient.PresignedPutObject(ctx, s.rawBucket, key, s.uploadExpiry)
 	if err != nil {
 		return "", fmt.Errorf("generate presigned put url for %s in %s: %w", key, s.rawBucket, err)
 	}
@@ -52,7 +68,7 @@ func (s *MinioStorage) GenerateUploadURL(ctx context.Context, key string) (strin
 }
 
 func (s *MinioStorage) GenerateCoverUploadURL(ctx context.Context, key string) (string, error) {
-	presignedURL, err := s.client.PresignedPutObject(ctx, s.coversBucket, key, s.uploadExpiry)
+	presignedURL, err := s.presignClient.PresignedPutObject(ctx, s.coversBucket, key, s.uploadExpiry)
 	if err != nil {
 		return "", fmt.Errorf("generate presigned put url for %s in %s: %w", key, s.coversBucket, err)
 	}
@@ -64,7 +80,7 @@ func (s *MinioStorage) GenerateAudioDownloadURL(ctx context.Context, key string,
 	if expiry <= 0 {
 		expiry = s.uploadExpiry
 	}
-	presignedURL, err := s.client.PresignedGetObject(ctx, s.audioBucket, key, expiry, nil)
+	presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.audioBucket, key, expiry, nil)
 	if err != nil {
 		return "", fmt.Errorf("generate presigned get url for %s in %s: %w", key, s.audioBucket, err)
 	}
