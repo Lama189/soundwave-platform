@@ -62,10 +62,18 @@ func main() {
 
 	becomeArtistUseCase := artistUsecase.NewBecomeArtistUseCase(catalogSvcClient, userSvcClient, log)
 	uploadTrackUseCase := trackUsecase.NewUploadTrackUseCase(trackSvcClient, log)
+	confirmUploadUseCase := trackUsecase.NewConfirmUploadUseCase(trackSvcClient, log)
+	completeProcessingUseCase := trackUsecase.NewCompleteProcessingUseCase(trackSvcClient, log)
+	failProcessingUseCase := trackUsecase.NewFailProcessingUseCase(trackSvcClient, log)
 
 	userHandler := deliveryHttp.NewUserHandler(userSvcClient)
 	artistHandler := deliveryHttp.NewArtistHandler(catalogSvcClient, becomeArtistUseCase)
-	trackHandler := deliveryHttp.NewTrackHandler(uploadTrackUseCase)
+	trackHandler := deliveryHttp.NewTrackHandler(
+		uploadTrackUseCase,
+		confirmUploadUseCase,
+		completeProcessingUseCase,
+		failProcessingUseCase,
+	)
 
 	router := deliveryHttp.NewRouter(userHandler, artistHandler, trackHandler, jwtValidator)
 

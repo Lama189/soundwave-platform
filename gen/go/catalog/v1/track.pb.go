@@ -274,6 +274,302 @@ func (x *UploadTrackResponse) GetUploadUrl() string {
 	return ""
 }
 
+type ConfirmUploadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TrackId       string                 `protobuf:"bytes,1,opt,name=track_id,json=trackId,proto3" json:"track_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmUploadRequest) Reset() {
+	*x = ConfirmUploadRequest{}
+	mi := &file_catalog_v1_track_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmUploadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmUploadRequest) ProtoMessage() {}
+
+func (x *ConfirmUploadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmUploadRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmUploadRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ConfirmUploadRequest) GetTrackId() string {
+	if x != nil {
+		return x.TrackId
+	}
+	return ""
+}
+
+func (x *ConfirmUploadRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type ConfirmUploadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Track         *Track                 `protobuf:"bytes,1,opt,name=track,proto3" json:"track,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmUploadResponse) Reset() {
+	*x = ConfirmUploadResponse{}
+	mi := &file_catalog_v1_track_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmUploadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmUploadResponse) ProtoMessage() {}
+
+func (x *ConfirmUploadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmUploadResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmUploadResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ConfirmUploadResponse) GetTrack() *Track {
+	if x != nil {
+		return x.Track
+	}
+	return nil
+}
+
+type CompleteProcessingRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TrackId         string                 `protobuf:"bytes,1,opt,name=track_id,json=trackId,proto3" json:"track_id,omitempty"`
+	DurationSeconds int64                  `protobuf:"varint,2,opt,name=duration_seconds,json=durationSeconds,proto3" json:"duration_seconds,omitempty"`
+	FileKey         string                 `protobuf:"bytes,3,opt,name=file_key,json=fileKey,proto3" json:"file_key,omitempty"`
+	PreviewKey      string                 `protobuf:"bytes,4,opt,name=preview_key,json=previewKey,proto3" json:"preview_key,omitempty"`
+	CoverKey        string                 `protobuf:"bytes,5,opt,name=cover_key,json=coverKey,proto3" json:"cover_key,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *CompleteProcessingRequest) Reset() {
+	*x = CompleteProcessingRequest{}
+	mi := &file_catalog_v1_track_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteProcessingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteProcessingRequest) ProtoMessage() {}
+
+func (x *CompleteProcessingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteProcessingRequest.ProtoReflect.Descriptor instead.
+func (*CompleteProcessingRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CompleteProcessingRequest) GetTrackId() string {
+	if x != nil {
+		return x.TrackId
+	}
+	return ""
+}
+
+func (x *CompleteProcessingRequest) GetDurationSeconds() int64 {
+	if x != nil {
+		return x.DurationSeconds
+	}
+	return 0
+}
+
+func (x *CompleteProcessingRequest) GetFileKey() string {
+	if x != nil {
+		return x.FileKey
+	}
+	return ""
+}
+
+func (x *CompleteProcessingRequest) GetPreviewKey() string {
+	if x != nil {
+		return x.PreviewKey
+	}
+	return ""
+}
+
+func (x *CompleteProcessingRequest) GetCoverKey() string {
+	if x != nil {
+		return x.CoverKey
+	}
+	return ""
+}
+
+type CompleteProcessingResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Track         *Track                 `protobuf:"bytes,1,opt,name=track,proto3" json:"track,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteProcessingResponse) Reset() {
+	*x = CompleteProcessingResponse{}
+	mi := &file_catalog_v1_track_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteProcessingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteProcessingResponse) ProtoMessage() {}
+
+func (x *CompleteProcessingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteProcessingResponse.ProtoReflect.Descriptor instead.
+func (*CompleteProcessingResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CompleteProcessingResponse) GetTrack() *Track {
+	if x != nil {
+		return x.Track
+	}
+	return nil
+}
+
+type FailProcessingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TrackId       string                 `protobuf:"bytes,1,opt,name=track_id,json=trackId,proto3" json:"track_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailProcessingRequest) Reset() {
+	*x = FailProcessingRequest{}
+	mi := &file_catalog_v1_track_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailProcessingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailProcessingRequest) ProtoMessage() {}
+
+func (x *FailProcessingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailProcessingRequest.ProtoReflect.Descriptor instead.
+func (*FailProcessingRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FailProcessingRequest) GetTrackId() string {
+	if x != nil {
+		return x.TrackId
+	}
+	return ""
+}
+
+type FailProcessingResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FailProcessingResponse) Reset() {
+	*x = FailProcessingResponse{}
+	mi := &file_catalog_v1_track_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailProcessingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailProcessingResponse) ProtoMessage() {}
+
+func (x *FailProcessingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailProcessingResponse.ProtoReflect.Descriptor instead.
+func (*FailProcessingResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{8}
+}
+
 var File_catalog_v1_track_proto protoreflect.FileDescriptor
 
 const file_catalog_v1_track_proto_rawDesc = "" +
@@ -307,9 +603,29 @@ const file_catalog_v1_track_proto_rawDesc = "" +
 	"\x13UploadTrackResponse\x12'\n" +
 	"\x05track\x18\x01 \x01(\v2\x11.catalog.v1.TrackR\x05track\x12\x1d\n" +
 	"\n" +
-	"upload_url\x18\x02 \x01(\tR\tuploadUrl2^\n" +
+	"upload_url\x18\x02 \x01(\tR\tuploadUrl\"J\n" +
+	"\x14ConfirmUploadRequest\x12\x19\n" +
+	"\btrack_id\x18\x01 \x01(\tR\atrackId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"@\n" +
+	"\x15ConfirmUploadResponse\x12'\n" +
+	"\x05track\x18\x01 \x01(\v2\x11.catalog.v1.TrackR\x05track\"\xba\x01\n" +
+	"\x19CompleteProcessingRequest\x12\x19\n" +
+	"\btrack_id\x18\x01 \x01(\tR\atrackId\x12)\n" +
+	"\x10duration_seconds\x18\x02 \x01(\x03R\x0fdurationSeconds\x12\x19\n" +
+	"\bfile_key\x18\x03 \x01(\tR\afileKey\x12\x1f\n" +
+	"\vpreview_key\x18\x04 \x01(\tR\n" +
+	"previewKey\x12\x1b\n" +
+	"\tcover_key\x18\x05 \x01(\tR\bcoverKey\"E\n" +
+	"\x1aCompleteProcessingResponse\x12'\n" +
+	"\x05track\x18\x01 \x01(\v2\x11.catalog.v1.TrackR\x05track\"2\n" +
+	"\x15FailProcessingRequest\x12\x19\n" +
+	"\btrack_id\x18\x01 \x01(\tR\atrackId\"\x18\n" +
+	"\x16FailProcessingResponse2\xf2\x02\n" +
 	"\fTrackService\x12N\n" +
-	"\vUploadTrack\x12\x1e.catalog.v1.UploadTrackRequest\x1a\x1f.catalog.v1.UploadTrackResponseBCZAgithub.com/Lama189/soundwave-platform/gen/go/catalog/v1;catalogpbb\x06proto3"
+	"\vUploadTrack\x12\x1e.catalog.v1.UploadTrackRequest\x1a\x1f.catalog.v1.UploadTrackResponse\x12T\n" +
+	"\rConfirmUpload\x12 .catalog.v1.ConfirmUploadRequest\x1a!.catalog.v1.ConfirmUploadResponse\x12c\n" +
+	"\x12CompleteProcessing\x12%.catalog.v1.CompleteProcessingRequest\x1a&.catalog.v1.CompleteProcessingResponse\x12W\n" +
+	"\x0eFailProcessing\x12!.catalog.v1.FailProcessingRequest\x1a\".catalog.v1.FailProcessingResponseBCZAgithub.com/Lama189/soundwave-platform/gen/go/catalog/v1;catalogpbb\x06proto3"
 
 var (
 	file_catalog_v1_track_proto_rawDescOnce sync.Once
@@ -323,24 +639,38 @@ func file_catalog_v1_track_proto_rawDescGZIP() []byte {
 	return file_catalog_v1_track_proto_rawDescData
 }
 
-var file_catalog_v1_track_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_catalog_v1_track_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_catalog_v1_track_proto_goTypes = []any{
-	(*Track)(nil),                 // 0: catalog.v1.Track
-	(*UploadTrackRequest)(nil),    // 1: catalog.v1.UploadTrackRequest
-	(*UploadTrackResponse)(nil),   // 2: catalog.v1.UploadTrackResponse
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*Track)(nil),                      // 0: catalog.v1.Track
+	(*UploadTrackRequest)(nil),         // 1: catalog.v1.UploadTrackRequest
+	(*UploadTrackResponse)(nil),        // 2: catalog.v1.UploadTrackResponse
+	(*ConfirmUploadRequest)(nil),       // 3: catalog.v1.ConfirmUploadRequest
+	(*ConfirmUploadResponse)(nil),      // 4: catalog.v1.ConfirmUploadResponse
+	(*CompleteProcessingRequest)(nil),  // 5: catalog.v1.CompleteProcessingRequest
+	(*CompleteProcessingResponse)(nil), // 6: catalog.v1.CompleteProcessingResponse
+	(*FailProcessingRequest)(nil),      // 7: catalog.v1.FailProcessingRequest
+	(*FailProcessingResponse)(nil),     // 8: catalog.v1.FailProcessingResponse
+	(*timestamppb.Timestamp)(nil),      // 9: google.protobuf.Timestamp
 }
 var file_catalog_v1_track_proto_depIdxs = []int32{
-	3, // 0: catalog.v1.Track.created_at:type_name -> google.protobuf.Timestamp
-	3, // 1: catalog.v1.Track.updated_at:type_name -> google.protobuf.Timestamp
+	9, // 0: catalog.v1.Track.created_at:type_name -> google.protobuf.Timestamp
+	9, // 1: catalog.v1.Track.updated_at:type_name -> google.protobuf.Timestamp
 	0, // 2: catalog.v1.UploadTrackResponse.track:type_name -> catalog.v1.Track
-	1, // 3: catalog.v1.TrackService.UploadTrack:input_type -> catalog.v1.UploadTrackRequest
-	2, // 4: catalog.v1.TrackService.UploadTrack:output_type -> catalog.v1.UploadTrackResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	0, // 3: catalog.v1.ConfirmUploadResponse.track:type_name -> catalog.v1.Track
+	0, // 4: catalog.v1.CompleteProcessingResponse.track:type_name -> catalog.v1.Track
+	1, // 5: catalog.v1.TrackService.UploadTrack:input_type -> catalog.v1.UploadTrackRequest
+	3, // 6: catalog.v1.TrackService.ConfirmUpload:input_type -> catalog.v1.ConfirmUploadRequest
+	5, // 7: catalog.v1.TrackService.CompleteProcessing:input_type -> catalog.v1.CompleteProcessingRequest
+	7, // 8: catalog.v1.TrackService.FailProcessing:input_type -> catalog.v1.FailProcessingRequest
+	2, // 9: catalog.v1.TrackService.UploadTrack:output_type -> catalog.v1.UploadTrackResponse
+	4, // 10: catalog.v1.TrackService.ConfirmUpload:output_type -> catalog.v1.ConfirmUploadResponse
+	6, // 11: catalog.v1.TrackService.CompleteProcessing:output_type -> catalog.v1.CompleteProcessingResponse
+	8, // 12: catalog.v1.TrackService.FailProcessing:output_type -> catalog.v1.FailProcessingResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_catalog_v1_track_proto_init() }
@@ -356,7 +686,7 @@ func file_catalog_v1_track_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_v1_track_proto_rawDesc), len(file_catalog_v1_track_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

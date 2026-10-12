@@ -8,6 +8,9 @@ import "google/protobuf/timestamp.proto";
 
 service TrackService {
   rpc UploadTrack(UploadTrackRequest) returns (UploadTrackResponse);
+  rpc ConfirmUpload(ConfirmUploadRequest) returns (ConfirmUploadResponse);
+  rpc CompleteProcessing(CompleteProcessingRequest) returns (CompleteProcessingResponse);
+  rpc FailProcessing(FailProcessingRequest) returns (FailProcessingResponse);
 }
 
 message Track {
@@ -36,3 +39,30 @@ message UploadTrackResponse {
   Track track = 1;
   string upload_url = 2;
 }
+
+message ConfirmUploadRequest {
+  string track_id = 1;
+  string user_id = 2;
+}
+
+message ConfirmUploadResponse {
+  Track track = 1;
+}
+
+message CompleteProcessingRequest {
+  string track_id = 1;
+  int64 duration_seconds = 2;
+  string file_key = 3;
+  string preview_key = 4;
+  string cover_key = 5;
+}
+
+message CompleteProcessingResponse {
+  Track track = 1;
+}
+
+message FailProcessingRequest {
+  string track_id = 1;
+}
+
+message FailProcessingResponse {}

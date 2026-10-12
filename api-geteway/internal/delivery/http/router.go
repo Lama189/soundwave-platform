@@ -51,7 +51,11 @@ func NewRouter(
 			r.Group(func(r chi.Router) {
 				r.Use(AuthMiddleware(tokenValidator))
 				r.Post("/upload", trackHandler.UploadTrack)
+				r.Post("/{id}/confirm", trackHandler.ConfirmUpload)
 			})
+
+			r.Post("/{id}/complete", trackHandler.CompleteProcessing)
+			r.Post("/{id}/fail", trackHandler.FailProcessing)
 		})
 	})
 

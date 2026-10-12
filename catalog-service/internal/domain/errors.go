@@ -34,6 +34,7 @@ var (
 	ErrInvalidAudioDuration   = fmt.Errorf("%w: duration must be positive", ErrInvalidInput)
 	ErrInvalidStateTransition = fmt.Errorf("%w: invalid state transition", ErrConflict)
 	ErrUnsupportedAudioFormat = fmt.Errorf("%w: unsupported audio format", ErrInvalidInput)
+	ErrRawFileNotFound        = fmt.Errorf("%w: raw audio file not found in storage", ErrNotFound)
 )
 
 // Playlist errors

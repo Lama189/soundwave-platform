@@ -175,17 +175,70 @@ func (s *Service) UploadTrack(ctx context.Context, currentUserID uuid.UUID, dto 
 	}, nil
 }
 
-func (s *Service) CompleteProcessing(ctx context.Context, trackID uuid.UUID, dto CompleteProcessingDTO) error {
+func (s *Service) ConfirmUpload(ctx context.Context, currentUserID, trackID uuid.UUID) (*TrackOutputDTO, error) {
+	t, err := s.tracks.GetByID(ctx, trackID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.ErrTrackNotFound
+		}
+		return nil, fmt.Errorf("find track for confirm upload: %w", err)
+	}
+
+	artist, err := s.artists.GetByID(ctx, t.ArtistID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.ErrArtistNotFound
+		}
+		return nil, fmt.Errorf("find track artist: %w", err)
+	}
+
+	if artist.UserID != currentUserID {
+		return nil, domain.ErrNotArtistOwner
+	}
+
+	if t.RawKey == "" {
+		return nil, fmt.Errorf("%w: track has no raw file key", domain.ErrInvalidInput)
+	}
+
+	exists, err := s.storage.ObjectExists(ctx, t.RawKey)
+	if err != nil {
+		return nil, fmt.Errorf("check raw object exists for track %s: %w", trackID, err)
+	}
+	if !exists {
+		return nil, domain.ErrRawFileNotFound
+	}
+
+	if err := t.MarkAsProcessing(); err != nil {
+		return nil, fmt.Errorf("mark track processing: %w", err)
+	}
+
+	if err := s.tracks.UpdateStatus(
+		ctx,
+		t.ID,
+		t.Status,
+		t.FileKey,
+		t.PreviewKey,
+		t.Duration,
+	); err != nil {
+		return nil, fmt.Errorf("update track status to processing: %w", err)
+	}
+
+	// TODO: публикация события в очередь брокера
+
+	return toOutputDTO(t), nil
+}
+
+func (s *Service) CompleteProcessing(ctx context.Context, trackID uuid.UUID, dto CompleteProcessingDTO) (*TrackOutputDTO, error) {
 	track, err := s.tracks.GetByID(ctx, trackID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
-			return domain.ErrTrackNotFound
+			return nil, domain.ErrTrackNotFound
 		}
-		return fmt.Errorf("get track by id: %w", err)
+		return nil, fmt.Errorf("get track by id: %w", err)
 	}
 
 	if err := track.MarkAsReady(dto.CoverKey, dto.FileKey, dto.PreviewKey, dto.Duration); err != nil {
-		return fmt.Errorf("mark track ready: %w", err)
+		return nil, fmt.Errorf("mark track ready: %w", err)
 	}
 
 	if err := s.tracks.UpdateStatus(
@@ -196,16 +249,16 @@ func (s *Service) CompleteProcessing(ctx context.Context, trackID uuid.UUID, dto
 		track.PreviewKey,
 		track.Duration,
 	); err != nil {
-		return fmt.Errorf("update track status: %w", err)
+		return nil, fmt.Errorf("update track status: %w", err)
 	}
 
 	if track.CoverKey != "" {
 		if err := s.tracks.Update(ctx, track); err != nil {
-			return fmt.Errorf("update track cover: %w", err)
+			return nil, fmt.Errorf("update track cover: %w", err)
 		}
 	}
 
-	return nil
+	return toOutputDTO(track), nil
 }
 
 func (s *Service) FailProcessing(ctx context.Context, trackID uuid.UUID) error {

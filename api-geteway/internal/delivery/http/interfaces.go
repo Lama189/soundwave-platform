@@ -28,3 +28,15 @@ type BecomeArtistUseCase interface {
 type UploadTrackUseCase interface {
 	Execute(ctx context.Context, input usecaseTrack.UploadTrackInput) (*grpcclient.UploadTrackResponse, error)
 }
+
+type ConfirmUploadUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.ConfirmUploadInput) (*grpcclient.TrackResponse, error)
+}
+
+type CompleteProcessingUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.CompleteProcessingInput) (*grpcclient.TrackResponse, error)
+}
+
+type FailProcessingUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.FailProcessingInput) error
+}

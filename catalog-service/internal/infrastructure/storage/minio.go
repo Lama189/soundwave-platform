@@ -72,6 +72,21 @@ func (s *MinioStorage) GenerateAudioDownloadURL(ctx context.Context, key string,
 	return presignedURL.String(), nil
 }
 
+func (s *MinioStorage) ObjectExists(ctx context.Context, key string) (bool, error) {
+	_, err := s.client.StatObject(ctx, s.rawBucket, key, minio.GetObjectOptions{})
+	if err != nil {
+		errResp := minio.ToErrorResponse(err)
+		
+		if errResp.Code == "NoSuchKey" {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("stat object %s in %s: %w", key, s.rawBucket, err)
+	}
+
+	return true, nil
+}
+
 func (s *MinioStorage) ensureBuckets(ctx context.Context) error {
 	buckets := []string{s.rawBucket, s.audioBucket, s.coversBucket}
 	for _, b := range buckets {

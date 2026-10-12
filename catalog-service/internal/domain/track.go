@@ -146,6 +146,17 @@ func (t *Track) MarkAsFailed() error {
 	return nil
 }
 
+func (t *Track) MarkAsProcessing() error {
+	if t.Status != TrackStatusDraft {
+		return fmt.Errorf("%w: cannot transition from %s to processing", ErrInvalidStateTransition, t.Status)
+	}
+
+	t.Status = TrackStatusProcessing
+	t.UpdatedAt = time.Now().UTC()
+
+	return nil
+}
+
 func (t *Track) Update(title string, albumID *uuid.UUID, coverKey string) error {
 	t.Title = strings.TrimSpace(title)
 	t.AlbumID = albumID

@@ -87,3 +87,21 @@ type UploadTrackResponse struct {
 	UploadURL string        `json:"upload_url"`
 }
 
+type ConfirmUploadRequest struct {
+	TrackID uuid.UUID
+	UserID  uuid.UUID
+}
+
+type CompleteProcessingRequest struct {
+	TrackID         uuid.UUID
+	DurationSeconds int64
+	FileKey         string
+	PreviewKey      string
+	CoverKey        string
+}
+
+type FailProcessingRequest struct {
+	TrackID uuid.UUID
+}
+
+type FailProcessingResponse struct{}

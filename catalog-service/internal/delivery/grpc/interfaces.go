@@ -19,6 +19,7 @@ type ArtistService interface {
 
 type TrackService interface {
 	UploadTrack(ctx context.Context, currentUserID uuid.UUID, dto track.UploadTrackDTO) (*track.UploadTrackOutputDTO, error)
+	ConfirmUpload(ctx context.Context, currentUserID, trackID uuid.UUID) (*track.TrackOutputDTO, error)
+	CompleteProcessing(ctx context.Context, trackID uuid.UUID, dto track.CompleteProcessingDTO) (*track.TrackOutputDTO, error)
+	FailProcessing(ctx context.Context, trackID uuid.UUID) error
 }
-
-

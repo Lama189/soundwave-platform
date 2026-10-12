@@ -57,6 +57,63 @@ func (c *TrackClient) UploadTrack(ctx context.Context, req UploadTrackRequest) (
 	}, nil
 }
 
+func (c *TrackClient) ConfirmUpload(ctx context.Context, req ConfirmUploadRequest) (*TrackResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	pbRes, err := c.grpcClient.ConfirmUpload(ctx, &catalogpb.ConfirmUploadRequest{
+		TrackId: req.TrackID.String(),
+		UserId:  req.UserID.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	trackRes, err := toTrackResponse(pbRes.GetTrack())
+	if err != nil {
+		return nil, fmt.Errorf("invalid track returned from gRPC: %w", err)
+	}
+
+	return trackRes, nil
+}
+
+func (c *TrackClient) CompleteProcessing(ctx context.Context, req CompleteProcessingRequest) (*TrackResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	pbRes, err := c.grpcClient.CompleteProcessing(ctx, &catalogpb.CompleteProcessingRequest{
+		TrackId:         req.TrackID.String(),
+		DurationSeconds: req.DurationSeconds,
+		FileKey:         req.FileKey,
+		PreviewKey:      req.PreviewKey,
+		CoverKey:        req.CoverKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	trackRes, err := toTrackResponse(pbRes.GetTrack())
+	if err != nil {
+		return nil, fmt.Errorf("invalid track returned from gRPC: %w", err)
+	}
+
+	return trackRes, nil
+}
+
+func (c *TrackClient) FailProcessing(ctx context.Context, req FailProcessingRequest) (*FailProcessingResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	_, err := c.grpcClient.FailProcessing(ctx, &catalogpb.FailProcessingRequest{
+		TrackId: req.TrackID.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &FailProcessingResponse{}, nil
+}
+
 func toTrackResponse(pb *catalogpb.Track) (*TrackResponse, error) {
 	if pb == nil {
 		return nil, nil

@@ -19,7 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TrackService_UploadTrack_FullMethodName = "/catalog.v1.TrackService/UploadTrack"
+	TrackService_UploadTrack_FullMethodName        = "/catalog.v1.TrackService/UploadTrack"
+	TrackService_ConfirmUpload_FullMethodName      = "/catalog.v1.TrackService/ConfirmUpload"
+	TrackService_CompleteProcessing_FullMethodName = "/catalog.v1.TrackService/CompleteProcessing"
+	TrackService_FailProcessing_FullMethodName     = "/catalog.v1.TrackService/FailProcessing"
 )
 
 // TrackServiceClient is the client API for TrackService service.
@@ -27,6 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TrackServiceClient interface {
 	UploadTrack(ctx context.Context, in *UploadTrackRequest, opts ...grpc.CallOption) (*UploadTrackResponse, error)
+	ConfirmUpload(ctx context.Context, in *ConfirmUploadRequest, opts ...grpc.CallOption) (*ConfirmUploadResponse, error)
+	CompleteProcessing(ctx context.Context, in *CompleteProcessingRequest, opts ...grpc.CallOption) (*CompleteProcessingResponse, error)
+	FailProcessing(ctx context.Context, in *FailProcessingRequest, opts ...grpc.CallOption) (*FailProcessingResponse, error)
 }
 
 type trackServiceClient struct {
@@ -47,11 +53,44 @@ func (c *trackServiceClient) UploadTrack(ctx context.Context, in *UploadTrackReq
 	return out, nil
 }
 
+func (c *trackServiceClient) ConfirmUpload(ctx context.Context, in *ConfirmUploadRequest, opts ...grpc.CallOption) (*ConfirmUploadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmUploadResponse)
+	err := c.cc.Invoke(ctx, TrackService_ConfirmUpload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trackServiceClient) CompleteProcessing(ctx context.Context, in *CompleteProcessingRequest, opts ...grpc.CallOption) (*CompleteProcessingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteProcessingResponse)
+	err := c.cc.Invoke(ctx, TrackService_CompleteProcessing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trackServiceClient) FailProcessing(ctx context.Context, in *FailProcessingRequest, opts ...grpc.CallOption) (*FailProcessingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FailProcessingResponse)
+	err := c.cc.Invoke(ctx, TrackService_FailProcessing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrackServiceServer is the server API for TrackService service.
 // All implementations must embed UnimplementedTrackServiceServer
 // for forward compatibility.
 type TrackServiceServer interface {
 	UploadTrack(context.Context, *UploadTrackRequest) (*UploadTrackResponse, error)
+	ConfirmUpload(context.Context, *ConfirmUploadRequest) (*ConfirmUploadResponse, error)
+	CompleteProcessing(context.Context, *CompleteProcessingRequest) (*CompleteProcessingResponse, error)
+	FailProcessing(context.Context, *FailProcessingRequest) (*FailProcessingResponse, error)
 	mustEmbedUnimplementedTrackServiceServer()
 }
 
@@ -64,6 +103,15 @@ type UnimplementedTrackServiceServer struct{}
 
 func (UnimplementedTrackServiceServer) UploadTrack(context.Context, *UploadTrackRequest) (*UploadTrackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UploadTrack not implemented")
+}
+func (UnimplementedTrackServiceServer) ConfirmUpload(context.Context, *ConfirmUploadRequest) (*ConfirmUploadResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmUpload not implemented")
+}
+func (UnimplementedTrackServiceServer) CompleteProcessing(context.Context, *CompleteProcessingRequest) (*CompleteProcessingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteProcessing not implemented")
+}
+func (UnimplementedTrackServiceServer) FailProcessing(context.Context, *FailProcessingRequest) (*FailProcessingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FailProcessing not implemented")
 }
 func (UnimplementedTrackServiceServer) mustEmbedUnimplementedTrackServiceServer() {}
 func (UnimplementedTrackServiceServer) testEmbeddedByValue()                      {}
@@ -104,6 +152,60 @@ func _TrackService_UploadTrack_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrackService_ConfirmUpload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmUploadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).ConfirmUpload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_ConfirmUpload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).ConfirmUpload(ctx, req.(*ConfirmUploadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrackService_CompleteProcessing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteProcessingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).CompleteProcessing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_CompleteProcessing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).CompleteProcessing(ctx, req.(*CompleteProcessingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrackService_FailProcessing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FailProcessingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).FailProcessing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_FailProcessing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).FailProcessing(ctx, req.(*FailProcessingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrackService_ServiceDesc is the grpc.ServiceDesc for TrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +216,18 @@ var TrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UploadTrack",
 			Handler:    _TrackService_UploadTrack_Handler,
+		},
+		{
+			MethodName: "ConfirmUpload",
+			Handler:    _TrackService_ConfirmUpload_Handler,
+		},
+		{
+			MethodName: "CompleteProcessing",
+			Handler:    _TrackService_CompleteProcessing_Handler,
+		},
+		{
+			MethodName: "FailProcessing",
+			Handler:    _TrackService_FailProcessing_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
