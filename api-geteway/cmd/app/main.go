@@ -16,6 +16,7 @@ import (
 	"github.com/Lama189/soundwave-platform/api-geteway/internal/infrastructure/jwt"
 	"github.com/Lama189/soundwave-platform/api-geteway/internal/infrastructure/logger"
 	artistUsecase "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/artist"
+	trackUsecase "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/track"
 )
 
 func main() {
@@ -57,13 +58,16 @@ func main() {
 
 	userSvcClient := grpcclient.NewUserClient(userConn, cfg.Services.User.Timeout)
 	catalogSvcClient := grpcclient.NewArtistClient(catalogConn, cfg.Services.Catalog.Timeout)
+	trackSvcClient := grpcclient.NewTrackClient(catalogConn, cfg.Services.Catalog.Timeout)
 
 	becomeArtistUseCase := artistUsecase.NewBecomeArtistUseCase(catalogSvcClient, userSvcClient, log)
+	uploadTrackUseCase := trackUsecase.NewUploadTrackUseCase(trackSvcClient, log)
 
 	userHandler := deliveryHttp.NewUserHandler(userSvcClient)
 	artistHandler := deliveryHttp.NewArtistHandler(catalogSvcClient, becomeArtistUseCase)
+	trackHandler := deliveryHttp.NewTrackHandler(uploadTrackUseCase)
 
-	router := deliveryHttp.NewRouter(userHandler, artistHandler, jwtValidator)
+	router := deliveryHttp.NewRouter(userHandler, artistHandler, trackHandler, jwtValidator)
 
 	srv := &http.Server{
 		Addr:         cfg.HTTP.Port,

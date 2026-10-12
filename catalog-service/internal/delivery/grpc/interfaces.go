@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/artist"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
 )
 
 type ArtistService interface {
@@ -15,3 +16,9 @@ type ArtistService interface {
 	Update(ctx context.Context, currentUserID, artistID uuid.UUID, dto artist.UpdateArtistDTO) (*artist.ArtistOutputDTO, error)
 	Delete(ctx context.Context, currentUserID, artistID uuid.UUID) error
 }
+
+type TrackService interface {
+	UploadTrack(ctx context.Context, currentUserID uuid.UUID, dto track.UploadTrackDTO) (*track.UploadTrackOutputDTO, error)
+}
+
+

@@ -10,8 +10,10 @@ import (
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/config"
 	deliveryGrpc "github.com/Lama189/soundwave-platform/catalog-service/internal/delivery/grpc"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/infrastructure/storage"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/repository/postgres"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/artist"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
 	catalogpb "github.com/Lama189/soundwave-platform/gen/go/catalog/v1"
 	"google.golang.org/grpc"
 )
@@ -34,12 +36,25 @@ func main() {
 
 	log.Println("Database connection established and migrations applied successfully")
 
+	minioStorage, err := storage.NewMinioStorage(ctx, cfg.Storage)
+	if err != nil {
+		log.Fatalf("failed to init minio storage: %v", err)
+	}
+
 	artistRepo := postgres.NewArtistRepository(pgPool)
+	albumRepo := postgres.NewAlbumRepository(pgPool)
+	trackRepo := postgres.NewTrackRepository(pgPool)
+	trackLikeRepo := postgres.NewTrackLikeRepository(pgPool)
+
 	artistService := artist.NewService(artistRepo)
+	trackService := track.NewTrackService(trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage)
 
 	grpcServer := grpc.NewServer()
 	artistGrpcHandler := deliveryGrpc.NewArtistGRPCServer(artistService)
+	trackGrpcHandler := deliveryGrpc.NewTrackGRPCServer(trackService)
+
 	catalogpb.RegisterArtistServiceServer(grpcServer, artistGrpcHandler)
+	catalogpb.RegisterTrackServiceServer(grpcServer, trackGrpcHandler)
 
 	lis, err := net.Listen("tcp", cfg.GRPC.Port)
 	if err != nil {

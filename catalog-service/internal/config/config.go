@@ -28,7 +28,9 @@ type StorageConfig struct {
 	AccessKeyID     string        `env:"MINIO_ACCESS_KEY" env-default:"minioadmin"`
 	SecretAccessKey string        `env:"MINIO_SECRET_KEY" env-default:"minioadmin"`
 	UseSSL          bool          `env:"MINIO_USE_SSL" env-default:"false"`
-	BucketName      string        `env:"MINIO_BUCKET_NAME" env-default:"soundwave-audio"`
+	RawBucket       string        `env:"MINIO_RAW_BUCKET" env-default:"soundwave-raw"`
+	AudioBucket     string        `env:"MINIO_AUDIO_BUCKET" env-default:"soundwave-audio"`
+	CoversBucket    string        `env:"MINIO_COVERS_BUCKET" env-default:"soundwave-covers"`
 	UploadExpiry    time.Duration `env:"MINIO_UPLOAD_EXPIRY" env-default:"15m"`
 }
 

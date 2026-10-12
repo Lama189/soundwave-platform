@@ -5,6 +5,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/api-geteway/internal/grpcclient"
 	usecaseArtist "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/artist"
+	usecaseTrack "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/track"
 	"github.com/google/uuid"
 )
 
@@ -22,4 +23,8 @@ type ArtistClient interface {
 
 type BecomeArtistUseCase interface {
 	Execute(ctx context.Context, input usecaseArtist.BecomeArtistInput) (*grpcclient.ArtistResponse, error)
+}
+
+type UploadTrackUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.UploadTrackInput) (*grpcclient.UploadTrackResponse, error)
 }

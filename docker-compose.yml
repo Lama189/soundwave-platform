@@ -73,7 +73,9 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_USE_SSL=${MINIO_SECURE}
-      - MINIO_BUCKET_NAME=soundwave-audio
+      - MINIO_RAW_BUCKET=${MINIO_RAW_BUCKET:-soundwave-raw}
+      - MINIO_AUDIO_BUCKET=${MINIO_AUDIO_BUCKET:-soundwave-audio}
+      - MINIO_COVERS_BUCKET=${MINIO_COVERS_BUCKET:-soundwave-covers}
       - MINIO_UPLOAD_EXPIRY=15m
     depends_on:
       postgres:

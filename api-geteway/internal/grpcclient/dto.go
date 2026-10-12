@@ -60,3 +60,30 @@ type RefreshResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type TrackResponse struct {
+	ID              uuid.UUID  `json:"id"`
+	ArtistID        uuid.UUID  `json:"artist_id"`
+	AlbumID         *uuid.UUID `json:"album_id,omitempty"`
+	Title           string     `json:"title"`
+	DurationSeconds int64      `json:"duration_seconds"`
+	CoverKey        string     `json:"cover_key"`
+	FileKey         string     `json:"file_key"`
+	PreviewKey      string     `json:"preview_key"`
+	RawKey          string     `json:"raw_key"`
+	Status          string     `json:"status"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+type UploadTrackRequest struct {
+	UserID   uuid.UUID
+	AlbumID  *uuid.UUID
+	Title    string
+	FileName string
+}
+
+type UploadTrackResponse struct {
+	Track     TrackResponse `json:"track"`
+	UploadURL string        `json:"upload_url"`
+}
+

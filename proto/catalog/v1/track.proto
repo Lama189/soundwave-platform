@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "github.com/Lama189/soundwave-platform/gen/go/catalog/v1;catalogpb";
+
+import "google/protobuf/timestamp.proto";
+
+service TrackService {
+  rpc UploadTrack(UploadTrackRequest) returns (UploadTrackResponse);
+}
+
+message Track {
+  string id = 1;
+  string artist_id = 2;
+  optional string album_id = 3;
+  string title = 4;
+  int64 duration_seconds = 5;
+  string cover_key = 6;
+  string file_key = 7;
+  string preview_key = 8;
+  string raw_key = 9;
+  string status = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+message UploadTrackRequest {
+  string user_id = 1;
+  string title = 2;
+  string file_name = 3;
+  optional string album_id = 4;
+}
+
+message UploadTrackResponse {
+  Track track = 1;
+  string upload_url = 2;
+}

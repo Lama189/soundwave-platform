@@ -8,7 +8,6 @@ import (
 )
 
 type UploadTrackDTO struct {
-	ArtistID uuid.UUID
 	AlbumID  *uuid.UUID
 	Title    string
 	FileName string
