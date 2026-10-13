@@ -13,6 +13,7 @@ type Config struct {
 	GRPC     GRPCConfig
 	Postgres PostgresConfig
 	Storage  StorageConfig
+	RabbitMQ RabbitMQConfig
 }
 
 type GRPCConfig struct {
@@ -21,6 +22,10 @@ type GRPCConfig struct {
 
 type PostgresConfig struct {
 	URL string `env:"DATABASE_URL" env-required:"true"`
+}
+
+type RabbitMQConfig struct {
+	URL string `env:"RABBITMQ_URL" env-default:"amqp://guest:guest@localhost:5672"`
 }
 
 type StorageConfig struct {

@@ -8,6 +8,7 @@ import (
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/config"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/notification"
 )
 
 type MinioStorage struct {
@@ -55,6 +56,10 @@ func NewMinioStorage(ctx context.Context, cfg config.StorageConfig) (*MinioStora
 		return nil, fmt.Errorf("ensure buckets exist: %w", err)
 	}
 
+	if err := storage.setupBucketNotifications(ctx); err != nil {
+		return nil, fmt.Errorf("setup bucket notifications: %w", err)
+	}
+
 	return storage, nil
 }
 
@@ -92,7 +97,7 @@ func (s *MinioStorage) ObjectExists(ctx context.Context, key string) (bool, erro
 	_, err := s.client.StatObject(ctx, s.rawBucket, key, minio.GetObjectOptions{})
 	if err != nil {
 		errResp := minio.ToErrorResponse(err)
-		
+
 		if errResp.Code == "NoSuchKey" {
 			return false, nil
 		}
@@ -132,6 +137,24 @@ func (s *MinioStorage) ensureBuckets(ctx context.Context) error {
 	}`, s.coversBucket)
 
 	_ = s.client.SetBucketPolicy(ctx, s.coversBucket, policy)
+
+	return nil
+}
+
+func (s *MinioStorage) setupBucketNotifications(ctx context.Context) error {
+	queueARN := notification.NewArn("minio", "sqs", "", "primary", "amqp")
+
+	queueConfig := notification.NewConfig(queueARN)
+	queueConfig.AddEvents(notification.ObjectCreatedPut)
+	queueConfig.AddFilterPrefix("raw/audio/")
+
+	config := notification.Configuration{}
+	config.AddQueue(queueConfig)
+
+	err := s.client.SetBucketNotification(ctx, s.rawBucket, config)
+	if err != nil {
+		return fmt.Errorf("set bucket notification for %s: %w", s.rawBucket, err)
+	}
 
 	return nil
 }
