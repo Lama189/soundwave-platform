@@ -135,6 +135,27 @@ services:
     networks:
       - backend-network
 
+  audio-worker:
+    build:
+      context: ./audio-worker
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_SECURE=false
+      - MINIO_RAW_BUCKET=${MINIO_RAW_BUCKET:-soundwave-raw}
+      - MINIO_AUDIO_BUCKET=${MINIO_AUDIO_BUCKET:-soundwave-audio}
+      - MINIO_COVERS_BUCKET=${MINIO_COVERS_BUCKET:-soundwave-covers}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - backend-network
+
 volumes:
   pgdata:
   miniodata:
