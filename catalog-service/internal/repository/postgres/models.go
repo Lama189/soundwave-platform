@@ -148,3 +148,25 @@ func (m *listeningHistoryModel) toDomain() *domain.ListeningHistory {
 		m.Completed,
 	)
 }
+
+type EventModel struct {
+	ID            uuid.UUID
+	AggregateType string
+	AggregateID   uuid.UUID
+	EventType     string
+	Payload       []byte
+	CreatedAt     time.Time
+	ProcessedAt   *time.Time
+}
+
+func (m *EventModel) toDomain() *domain.Event {
+	return domain.RestoreEvent(
+		m.ID,
+		domain.AggregateType(m.AggregateType),
+		m.AggregateID,
+		domain.EventType(m.EventType),
+		m.Payload,
+		m.CreatedAt,
+		m.ProcessedAt,
+	)
+}

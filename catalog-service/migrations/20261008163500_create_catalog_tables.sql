@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS playlist_tracks (
     PRIMARY KEY (playlist_id, track_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_playlist_tracks_order ON playlist_tracks(playlist_id, position ASC);
+CREATE INDEX IF NOT EXISTS idx_playlist_tracks_order
+    ON playlist_tracks(playlist_id, position ASC);
 
 CREATE TABLE IF NOT EXISTS track_likes (
     user_id UUID NOT NULL,
@@ -71,7 +72,8 @@ CREATE TABLE IF NOT EXISTS track_likes (
     PRIMARY KEY (user_id, track_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_track_likes_user_id ON track_likes(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_track_likes_user_id
+    ON track_likes(user_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS listening_history (
     id BIGSERIAL PRIMARY KEY,
@@ -81,11 +83,29 @@ CREATE TABLE IF NOT EXISTS listening_history (
     completed BOOLEAN NOT NULL DEFAULT false
 );
 
-CREATE INDEX IF NOT EXISTS idx_listening_history_user_time ON listening_history(user_id, listened_at DESC);
+CREATE INDEX IF NOT EXISTS idx_listening_history_user_time
+    ON listening_history(user_id, listened_at DESC);
+
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id UUID PRIMARY KEY,
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id UUID NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    payload JSONB NOT NULL,
+    headers JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_outbox_unprocessed
+    ON outbox_events (created_at)
+    WHERE processed_at IS NULL;
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE IF EXISTS outbox_events;
 DROP TABLE IF EXISTS listening_history;
 DROP TABLE IF EXISTS track_likes;
 DROP TABLE IF EXISTS playlist_tracks;
