@@ -6,15 +6,14 @@ import (
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TrackLikeRepository struct {
-	pool *pgxpool.Pool
+	db DB
 }
 
-func NewTrackLikeRepository(pool *pgxpool.Pool) *TrackLikeRepository {
-	return &TrackLikeRepository{pool: pool}
+func NewTrackLikeRepository(db DB) *TrackLikeRepository {
+	return &TrackLikeRepository{db: db}
 }
 
 func (r *TrackLikeRepository) Add(ctx context.Context, like *domain.TrackLike) error {
@@ -23,7 +22,7 @@ func (r *TrackLikeRepository) Add(ctx context.Context, like *domain.TrackLike) e
 		VALUES ($1, $2, $3);
 	`
 
-	_, err := r.pool.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		query,
 		like.UserID,
@@ -43,7 +42,7 @@ func (r *TrackLikeRepository) Remove(ctx context.Context, userID, trackID uuid.U
 		WHERE user_id = $1 AND track_id = $2;
 	`
 
-	cmdTag, err := r.pool.Exec(ctx, query, userID, trackID)
+	cmdTag, err := r.db.Exec(ctx, query, userID, trackID)
 	if err != nil {
 		return fmt.Errorf("remove track like: %w", mapError(err))
 	}
@@ -65,7 +64,7 @@ func (r *TrackLikeRepository) IsLiked(ctx context.Context, userID, trackID uuid.
 	`
 
 	var isLiked bool
-	err := r.pool.QueryRow(ctx, query, userID, trackID).Scan(&isLiked)
+	err := r.db.QueryRow(ctx, query, userID, trackID).Scan(&isLiked)
 	if err != nil {
 		return false, fmt.Errorf("check track is liked: %w", mapError(err))
 	}
@@ -82,7 +81,7 @@ func (r *TrackLikeRepository) GetLikedTrackIDs(ctx context.Context, userID uuid.
 		LIMIT $2 OFFSET $3;
 	`
 
-	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
+	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("get liked track ids for user %s: %w", userID, mapError(err))
 	}
@@ -112,7 +111,7 @@ func (r *TrackLikeRepository) CountByTrackID(ctx context.Context, trackID uuid.U
 	`
 
 	var count int64
-	err := r.pool.QueryRow(ctx, query, trackID).Scan(&count)
+	err := r.db.QueryRow(ctx, query, trackID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count likes for track %s: %w", trackID, mapError(err))
 	}

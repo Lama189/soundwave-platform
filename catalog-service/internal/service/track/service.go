@@ -2,16 +2,19 @@ package track
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/uow"
 	"github.com/google/uuid"
 )
 
 type Service struct {
+	uow     UnitOfWorkManager
 	tracks  TrackRepository
 	likes   TrackLikeRepository
 	artists ArtistRepository
@@ -20,6 +23,7 @@ type Service struct {
 }
 
 func NewTrackService(
+	uowManager UnitOfWorkManager,
 	tracks TrackRepository,
 	likes TrackLikeRepository,
 	artists ArtistRepository,
@@ -27,6 +31,7 @@ func NewTrackService(
 	storage Storage,
 ) *Service {
 	return &Service{
+		uow:     uowManager,
 		tracks:  tracks,
 		likes:   likes,
 		artists: artists,
@@ -212,18 +217,40 @@ func (s *Service) ConfirmUpload(ctx context.Context, currentUserID, trackID uuid
 		return nil, fmt.Errorf("mark track processing: %w", err)
 	}
 
-	if err := s.tracks.UpdateStatus(
-		ctx,
-		t.ID,
-		t.Status,
-		t.FileKey,
-		t.PreviewKey,
-		t.Duration,
-	); err != nil {
-		return nil, fmt.Errorf("update track status to processing: %w", err)
+	payload, err := json.Marshal(map[string]any{
+		"track_id":  t.ID,
+		"artist_id": t.ArtistID,
+		"raw_key":   t.RawKey,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("marshal outbox payload: %w", err)
 	}
 
-	// TODO: публикация события в очередь брокера
+	event, err := domain.NewEvent(uuid.New(), domain.AggregateTypeTrack, t.ID, domain.EventTypeTrackUploaded, payload)
+	if err != nil {
+		return nil, fmt.Errorf("create outbox event: %w", err)
+	}
+
+	if err := s.uow.Do(ctx, func(txUOW uow.UnitOfWork) error {
+		if err := txUOW.Tracks().UpdateStatus(
+			ctx,
+			t.ID,
+			t.Status,
+			t.FileKey,
+			t.PreviewKey,
+			t.Duration,
+		); err != nil {
+			return fmt.Errorf("update track status to processing: %w", err)
+		}
+
+		if err := txUOW.Outbox().Record(ctx, event); err != nil {
+			return fmt.Errorf("record outbox event: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("confirm upload transaction: %w", err)
+	}
 
 	return toOutputDTO(t), nil
 }
@@ -241,21 +268,53 @@ func (s *Service) CompleteProcessing(ctx context.Context, trackID uuid.UUID, dto
 		return nil, fmt.Errorf("mark track ready: %w", err)
 	}
 
-	if err := s.tracks.UpdateStatus(
-		ctx,
-		track.ID,
-		track.Status,
-		track.FileKey,
-		track.PreviewKey,
-		track.Duration,
-	); err != nil {
-		return nil, fmt.Errorf("update track status: %w", err)
+	payload, err := json.Marshal(map[string]any{
+		"track_id":         track.ID,
+		"artist_id":        track.ArtistID,
+		"file_key":         track.FileKey,
+		"preview_key":      track.PreviewKey,
+		"duration_seconds": int64(track.Duration.Seconds()),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("marshal outbox payload: %w", err)
 	}
 
-	if track.CoverKey != "" {
-		if err := s.tracks.Update(ctx, track); err != nil {
-			return nil, fmt.Errorf("update track cover: %w", err)
+	event, err := domain.NewEvent(
+		uuid.New(),
+		domain.AggregateTypeTrack,
+		track.ID,
+		domain.EventTypeTrackReady,
+		payload,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create track ready outbox event: %w", err)
+	}
+
+	if err := s.uow.Do(ctx, func(txUOW uow.UnitOfWork) error {
+		if err := txUOW.Tracks().UpdateStatus(
+			ctx,
+			track.ID,
+			track.Status,
+			track.FileKey,
+			track.PreviewKey,
+			track.Duration,
+		); err != nil {
+			return fmt.Errorf("update track status: %w", err)
 		}
+
+		if track.CoverKey != "" {
+			if err := txUOW.Tracks().Update(ctx, track); err != nil {
+				return fmt.Errorf("update track cover: %w", err)
+			}
+		}
+
+		if err := txUOW.Outbox().Record(ctx, event); err != nil {
+			return fmt.Errorf("record outbox event: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("complete processing transaction: %w", err)
 	}
 
 	return toOutputDTO(track), nil

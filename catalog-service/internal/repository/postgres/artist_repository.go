@@ -6,15 +6,14 @@ import (
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ArtistRepository struct {
-	pool *pgxpool.Pool
+	db DB
 }
 
-func NewArtistRepository(pool *pgxpool.Pool) *ArtistRepository {
-	return &ArtistRepository{pool: pool}
+func NewArtistRepository(db DB) *ArtistRepository {
+	return &ArtistRepository{db: db}
 }
 
 func (r *ArtistRepository) Create(ctx context.Context, artist *domain.Artist) error {
@@ -26,7 +25,7 @@ func (r *ArtistRepository) Create(ctx context.Context, artist *domain.Artist) er
 		RETURNING id;
 	`
 
-	err := r.pool.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		query,
 		artist.UserID,
@@ -50,7 +49,7 @@ func (r *ArtistRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.A
 	`
 
 	var m artistModel
-	err := r.pool.QueryRow(ctx, query, id).Scan(
+	err := r.db.QueryRow(ctx, query, id).Scan(
 		&m.ID,
 		&m.UserID,
 		&m.Name,
@@ -73,7 +72,7 @@ func (r *ArtistRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*
 	`
 
 	var m artistModel
-	err := r.pool.QueryRow(ctx, query, userID).Scan(
+	err := r.db.QueryRow(ctx, query, userID).Scan(
 		&m.ID,
 		&m.UserID,
 		&m.Name,
@@ -95,7 +94,7 @@ func (r *ArtistRepository) Update(ctx context.Context, artist *domain.Artist) er
 		WHERE id = $5;
 	`
 
-	cmdTag, err := r.pool.Exec(
+	cmdTag, err := r.db.Exec(
 		ctx,
 		query,
 		artist.UserID,
@@ -121,7 +120,7 @@ func (r *ArtistRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		WHERE id = $1;
 	`
 
-	cmdTag, err := r.pool.Exec(ctx, query, id)
+	cmdTag, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("delete artist: %w", mapError(err))
 	}

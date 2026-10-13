@@ -8,25 +8,23 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type OutboxRepository struct {
-	pool *pgxpool.Pool
+	db DB
 }
 
-func NewOutboxRepository(pool *pgxpool.Pool) *OutboxRepository {
-	return &OutboxRepository{pool: pool}
+func NewOutboxRepository(db DB) *OutboxRepository {
+	return &OutboxRepository{db: db}
 }
 
-func (r *OutboxRepository) Record(ctx context.Context, tx pgx.Tx, event *domain.Event) error {
-	const query = `                                                                                                                  
-        INSERT INTO outbox_events (                                                                                                      
-            id, aggregate_type, aggregate_id, event_type, payload, created_at                                                                
-        )                                                                                                                                
-        VALUES ($1, $2, $3, $4, $5, $6);                                                                                                 
-    `
+func (r *OutboxRepository) Record(ctx context.Context, event *domain.Event) error {
+	const query = `
+		INSERT INTO outbox_events (
+			id, aggregate_type, aggregate_id, event_type, payload, created_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6);
+	`
 
 	if event.ID == uuid.Nil {
 		event.ID = uuid.New()
@@ -35,25 +33,7 @@ func (r *OutboxRepository) Record(ctx context.Context, tx pgx.Tx, event *domain.
 		event.CreatedAt = time.Now().UTC()
 	}
 
-	if tx != nil {
-		_, err := tx.Exec(
-			ctx,
-			query,
-			event.ID,
-			event.AggregateType,
-			event.AggregateID,
-			event.EventType,
-			event.Payload,
-			event.CreatedAt,
-		)
-		if err != nil {
-			return fmt.Errorf("record outbox event in tx: %w", err)
-		}
-
-		return nil
-	}
-
-	_, err := r.pool.Exec(
+	_, err := r.db.Exec(
 		ctx,
 		query,
 		event.ID,
@@ -64,24 +44,24 @@ func (r *OutboxRepository) Record(ctx context.Context, tx pgx.Tx, event *domain.
 		event.CreatedAt,
 	)
 	if err != nil {
-		return fmt.Errorf("record outbox event: %w", err)
+		return fmt.Errorf("record outbox event: %w", mapError(err))
 	}
 
 	return nil
 }
 
 func (r *OutboxRepository) FetchUnprocessed(ctx context.Context, limit int) ([]*domain.Event, error) {
-	const query = `                                                                                                                  
-        SELECT id, aggregate_type, aggregate_id, event_type, payload, created_at, processed_at                                           
-        FROM outbox_events                                                                                                               
-        WHERE processed_at IS NULL                                                                                                       
-        ORDER BY created_at ASC                                                                                                          
-        LIMIT $1;                                                                                                                        
-    `
+	const query = `
+		SELECT id, aggregate_type, aggregate_id, event_type, payload, created_at, processed_at
+		FROM outbox_events
+		WHERE processed_at IS NULL
+		ORDER BY created_at ASC
+		LIMIT $1;
+	`
 
-	rows, err := r.pool.Query(ctx, query, limit)
+	rows, err := r.db.Query(ctx, query, limit)
 	if err != nil {
-		return nil, fmt.Errorf("fetch unprocessed outbox events: %w", err)
+		return nil, fmt.Errorf("fetch unprocessed outbox events: %w", mapError(err))
 	}
 	defer rows.Close()
 
@@ -111,17 +91,17 @@ func (r *OutboxRepository) FetchUnprocessed(ctx context.Context, limit int) ([]*
 }
 
 func (r *OutboxRepository) MarkProcessed(ctx context.Context, ids []uuid.UUID) error {
-	if len(ids) <= 0 {
+	if len(ids) == 0 {
 		return nil
 	}
 
 	const query = `
-        UPDATE outbox_events
-        SET processed_at = $1
-        WHERE id = ANY($2);
-    `
+		UPDATE outbox_events
+		SET processed_at = $1
+		WHERE id = ANY($2);
+	`
 
-	_, err := r.pool.Exec(ctx, query, time.Now().UTC(), ids)
+	_, err := r.db.Exec(ctx, query, time.Now().UTC(), ids)
 	if err != nil {
 		return fmt.Errorf("mark outbox events as processed: %w", mapError(err))
 	}
@@ -148,17 +128,15 @@ func (r *OutboxRepository) FetchAndClaim(ctx context.Context, limit int) ([]*dom
 		RETURNING id, aggregate_type, aggregate_id, event_type, payload, created_at, processed_at;
 	`
 
-	rows, err := r.pool.Query(ctx, query, limit)
+	rows, err := r.db.Query(ctx, query, limit)
 	if err != nil {
-		return nil, fmt.Errorf("fetch and claim outbox events: %w", err)
+		return nil, fmt.Errorf("fetch and claim outbox events: %w", mapError(err))
 	}
 	defer rows.Close()
 
 	events := make([]*domain.Event, 0, limit)
-
 	for rows.Next() {
 		var m EventModel
-
 		if err := rows.Scan(
 			&m.ID,
 			&m.AggregateType,

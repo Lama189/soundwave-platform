@@ -7,15 +7,14 @@ import (
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TrackRepository struct {
-	pool *pgxpool.Pool
+	db DB
 }
 
-func NewTrackRepository(pool *pgxpool.Pool) *TrackRepository {
-	return &TrackRepository{pool: pool}
+func NewTrackRepository(db DB) *TrackRepository {
+	return &TrackRepository{db: db}
 }
 
 func (r *TrackRepository) Create(ctx context.Context, track *domain.Track) error {
@@ -29,7 +28,7 @@ func (r *TrackRepository) Create(ctx context.Context, track *domain.Track) error
 		RETURNING id;
 	`
 
-	err := r.pool.QueryRow(
+	err := r.db.QueryRow(
 		ctx,
 		query,
 		track.ID,
@@ -61,7 +60,7 @@ func (r *TrackRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Tr
 	`
 
 	var m trackModel
-	err := r.pool.QueryRow(ctx, query, id).Scan(
+	err := r.db.QueryRow(ctx, query, id).Scan(
 		&m.ID,
 		&m.ArtistID,
 		&m.AlbumID,
@@ -92,7 +91,7 @@ func (r *TrackRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID,
 		LIMIT $2 OFFSET $3;
 	`
 
-	rows, err := r.pool.Query(ctx, query, artistID, limit, offset)
+	rows, err := r.db.Query(ctx, query, artistID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("get tracks by artist id %s: %w", artistID, mapError(err))
 	}
@@ -136,7 +135,7 @@ func (r *TrackRepository) GetByAlbumID(ctx context.Context, albumID uuid.UUID) (
 		ORDER BY created_at ASC;
 	`
 
-	rows, err := r.pool.Query(ctx, query, albumID)
+	rows, err := r.db.Query(ctx, query, albumID)
 	if err != nil {
 		return nil, fmt.Errorf("get tracks by album id %s: %w", albumID, mapError(err))
 	}
@@ -183,7 +182,7 @@ func (r *TrackRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*dom
 		WHERE id = ANY($1);
 	`
 
-	rows, err := r.pool.Query(ctx, query, ids)
+	rows, err := r.db.Query(ctx, query, ids)
 	if err != nil {
 		return nil, fmt.Errorf("get tracks by ids: %w", mapError(err))
 	}
@@ -225,7 +224,7 @@ func (r *TrackRepository) Update(ctx context.Context, track *domain.Track) error
 		WHERE id = $5;
 	`
 
-	cmdTag, err := r.pool.Exec(
+	cmdTag, err := r.db.Exec(
 		ctx,
 		query,
 		track.Title,
@@ -259,7 +258,7 @@ func (r *TrackRepository) UpdateStatus(
 		WHERE id = $6;
 	`
 
-	cmdTag, err := r.pool.Exec(
+	cmdTag, err := r.db.Exec(
 		ctx,
 		query,
 		string(status),
@@ -286,7 +285,7 @@ func (r *TrackRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		WHERE id = $1;
 	`
 
-	cmdTag, err := r.pool.Exec(ctx, query, id)
+	cmdTag, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("delete track %s: %w", id, mapError(err))
 	}

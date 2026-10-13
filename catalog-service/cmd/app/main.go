@@ -45,9 +45,10 @@ func main() {
 	albumRepo := postgres.NewAlbumRepository(pgPool)
 	trackRepo := postgres.NewTrackRepository(pgPool)
 	trackLikeRepo := postgres.NewTrackLikeRepository(pgPool)
+	uowManager := postgres.NewUnitOfWorkManager(pgPool)
 
 	artistService := artist.NewService(artistRepo)
-	trackService := track.NewTrackService(trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage)
+	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage)
 
 	grpcServer := grpc.NewServer()
 	artistGrpcHandler := deliveryGrpc.NewArtistGRPCServer(artistService)

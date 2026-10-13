@@ -5,8 +5,13 @@ import (
 	"time"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/uow"
 	"github.com/google/uuid"
 )
+
+type UnitOfWorkManager interface {
+	Do(ctx context.Context, fn func(work uow.UnitOfWork) error) error
+}
 
 type TrackRepository interface {
 	Create(ctx context.Context, track *domain.Track) error
