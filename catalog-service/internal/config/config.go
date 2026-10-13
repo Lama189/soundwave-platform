@@ -14,6 +14,7 @@ type Config struct {
 	Postgres PostgresConfig
 	Storage  StorageConfig
 	RabbitMQ RabbitMQConfig
+	Relay    RelayConfig
 }
 
 type GRPCConfig struct {
@@ -38,6 +39,18 @@ type StorageConfig struct {
 	AudioBucket     string        `env:"MINIO_AUDIO_BUCKET" env-default:"soundwave-audio"`
 	CoversBucket    string        `env:"MINIO_COVERS_BUCKET" env-default:"soundwave-covers"`
 	UploadExpiry    time.Duration `env:"MINIO_UPLOAD_EXPIRY" env-default:"15m"`
+}
+
+type RelayConfig struct {
+	PollInterval time.Duration `env:"OUTBOX_RELAY_POLL_INTERVAL" env-default:"1s"`
+	BatchSize    int           `env:"OUTBOX_RELAY_BATCH_SIZE" env-default:"50"`
+}
+
+func DefaultRelayConfig() RelayConfig {
+	return RelayConfig{
+		PollInterval: 1 * time.Second,
+		BatchSize:    50,
+	}
 }
 
 func Load() (*Config, error) {
