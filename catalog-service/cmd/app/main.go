@@ -68,6 +68,11 @@ func main() {
 		log.Fatalf("failed to start raw audio consumer: %v", err)
 	}
 
+	trackProcessedConsumer := deliveryAmqp.NewTrackProcessedConsumer(amqpConn, trackService, logger)
+	if err := trackProcessedConsumer.Start(ctx); err != nil {
+		log.Fatalf("failed to start track processed consumer: %v", err)
+	}
+
 	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)
 	if err := outboxRelay.Start(ctx); err != nil {
 		log.Fatalf("failed to start outbox relay: %v", err)
