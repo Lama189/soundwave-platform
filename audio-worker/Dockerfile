@@ -1,11 +1,7 @@
 FROM python:3.13-slim
 
-# Install system dependencies (ffmpeg and ffprobe)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Copy pre-compiled static ffmpeg and ffprobe binaries (instant download via Docker Hub CDN)
+COPY --from=mwader/static-ffmpeg:latest /ffmpeg /ffprobe /usr/local/bin/
 
 # Install uv from official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
