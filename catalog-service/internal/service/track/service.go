@@ -347,6 +347,73 @@ func (s *Service) FailProcessing(ctx context.Context, trackID uuid.UUID) error {
 	return nil
 }
 
+func (s *Service) MarkProcessing(ctx context.Context, trackID uuid.UUID) error {
+	t, err := s.tracks.GetByID(ctx, trackID)
+	if err != nil {
+		return fmt.Errorf("get track by id %s: %w", trackID, err)
+	}
+
+	if t.Status == domain.TrackStatusProcessing || t.Status == domain.TrackStatusReady {
+		return nil
+	}
+
+	if t.Status != domain.TrackStatusDraft {
+		return fmt.Errorf("%w: track %s status is %s, expected %s",
+			domain.ErrInvalidStateTransition, trackID, t.Status, domain.TrackStatusDraft)
+	}
+
+	if t.RawKey == "" {
+		return fmt.Errorf("%w: track has no raw file key", domain.ErrInvalidInput)
+	}
+
+	if err := t.MarkAsProcessing(); err != nil {
+		return fmt.Errorf("mark track processing: %w", err)
+	}
+
+	payload, err := json.Marshal(map[string]any{
+		"track_id":  t.ID,
+		"artist_id": t.ArtistID,
+		"raw_key":   t.RawKey,
+	})
+	if err != nil {
+		return fmt.Errorf("marshal outbox payload: %w", err)
+	}
+
+	event, err := domain.NewEvent(
+		uuid.New(),
+		domain.AggregateTypeTrack,
+		t.ID,
+		domain.EventTypeTrackUploaded,
+		payload,
+	)
+	if err != nil {
+		return fmt.Errorf("create outbox event: %w", err)
+	}
+
+	if err := s.uow.Do(ctx, func(txUOW uow.UnitOfWork) error {
+		if err := txUOW.Tracks().UpdateStatus(
+			ctx,
+			t.ID,
+			t.Status,
+			t.FileKey,
+			t.PreviewKey,
+			t.Duration,
+		); err != nil {
+			return fmt.Errorf("update track status to processing: %w", err)
+		}
+
+		if err := txUOW.Outbox().Record(ctx, event); err != nil {
+			return fmt.Errorf("record outbox event: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("mark processing transaction: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*TrackOutputDTO, error) {
 	t, err := s.tracks.GetByID(ctx, id)
 	if err != nil {

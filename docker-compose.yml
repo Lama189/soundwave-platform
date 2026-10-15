@@ -25,6 +25,23 @@ services:
     networks:
       - backend-network
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container-name: soundwave-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}                                                                              
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest} 
+    healthcheck:                                                                                                                  
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]                                                            
+      interval: 5s                                                                                                                
+      timeout: 5s                                                                                                                 
+      retries: 5                                                                                                                  
+    networks:                                                                                                                     
+      - backend-network 
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -35,6 +52,15 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_API_CORS_ALLOW_ORIGIN: "*"
+      MINIO_NOTIFY_AMQP_ENABLE_primary: "on"                                                                                      
+      MINIO_NOTIFY_AMQP_URL_primary: "amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672"                   
+      MINIO_NOTIFY_AMQP_EXCHANGE_primary: "minio-events"                                                                          
+      MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_primary: "topic"                                                                            
+      MINIO_NOTIFY_AMQP_ROUTING_KEY_primary: "tracks.raw.uploaded"                                                                
+      MINIO_NOTIFY_AMQP_DURABLE_primary: "on"  
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     volumes:
       - miniodata:/data
     networks:
@@ -79,8 +105,11 @@ services:
       - MINIO_AUDIO_BUCKET=${MINIO_AUDIO_BUCKET:-soundwave-audio}
       - MINIO_COVERS_BUCKET=${MINIO_COVERS_BUCKET:-soundwave-covers}
       - MINIO_UPLOAD_EXPIRY=15m
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       minio:
         condition: service_started
@@ -103,6 +132,27 @@ services:
     depends_on:
       - user-service
       - catalog-service
+    networks:
+      - backend-network
+
+  audio-worker:
+    build:
+      context: ./audio-worker
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_SECURE=false
+      - MINIO_RAW_BUCKET=${MINIO_RAW_BUCKET:-soundwave-raw}
+      - MINIO_AUDIO_BUCKET=${MINIO_AUDIO_BUCKET:-soundwave-audio}
+      - MINIO_COVERS_BUCKET=${MINIO_COVERS_BUCKET:-soundwave-covers}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
     networks:
       - backend-network
 

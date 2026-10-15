@@ -1,0 +1,22 @@
+[project]
+name = "audio-worker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Lama189", email = "sergey.kuramshin.dev@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aio-pika>=10.1.1",
+    "minio>=7.2.20",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.15.0",
+]
+
+[project.scripts]
+audio-worker = "audio_worker:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
