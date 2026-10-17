@@ -13,8 +13,8 @@ const baseWalletSelectQuery = `
         id,
         artist_id,
         currency,
-        balance_amount,
-        locked_balance_amount,
+        balance,
+        locked_balance,
         created_at,
         updated_at
     FROM wallets
@@ -35,8 +35,8 @@ func (r *WalletRepository) Create(ctx context.Context, wallet *domain.Wallet) er
 			id,
 			artist_id,
 			currency,
-			balance_amount,
-			locked_balance_amount,
+			balance,
+			locked_balance,
 			created_at,
 			updated_at
 		) VALUES (
@@ -44,18 +44,19 @@ func (r *WalletRepository) Create(ctx context.Context, wallet *domain.Wallet) er
 		);
 	`
 
-	err := r.db.QueryRow(
+	_, err := r.db.Exec(
 		ctx,
 		query,
 		wallet.ID,
 		wallet.ArtistID,
-		int64(wallet.Balance.Amount),
-		int64(wallet.LockedBalance.Amount),
+		string(wallet.Currency),
+		wallet.Balance.Amount,
+		wallet.LockedBalance.Amount,
 		wallet.CreatedAt,
 		wallet.UpdatedAt,
-	).Scan(&wallet.ID)
+	)
 	if err != nil {
-		return fmt.Errorf("create wallet: %w", mapError(err))
+		return fmt.Errorf("create wallet %s for artist %s: %w", wallet.ID, wallet.ArtistID, mapError(err))
 	}
 
 	return nil
@@ -73,19 +74,26 @@ func (r *WalletRepository) Update(ctx context.Context, wallet *domain.Wallet) er
 	const query = `
 		UPDATE wallets
 		SET
-			balance_amount = $2,
-			locked_balance_amount = $3,
+			balance = $2,
+			locked_balance = $3,
 			updated_at = $4
 		WHERE id = $1;
 	`
 
-	cmdTag, err := r.db.Exec(ctx, query, wallet.Balance, wallet.LockedBalance, wallet.UpdatedAt, wallet.ID)
+	cmdTag, err := r.db.Exec(
+		ctx,
+		query,
+		wallet.ID,
+		wallet.Balance.Amount,
+		wallet.LockedBalance.Amount,
+		wallet.UpdatedAt,
+	)
 	if err != nil {
 		return fmt.Errorf("update wallet %s: %w", wallet.ID, mapError(err))
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("%w: wallet id %s", domain.ErrNotFound, wallet.ID)
+		return fmt.Errorf("update wallet %s: %w", wallet.ID, domain.ErrNotFound)
 	}
 
 	return nil
