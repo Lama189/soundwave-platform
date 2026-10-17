@@ -76,16 +76,17 @@ func NewOrder(buyerUserID uuid.UUID, items []OrderItem) (*Order, error) {
 	return o, nil
 }
 
-func RestoreOrder(id, buyerUserID uuid.UUID, status OrderStatus, items []OrderItem, totalAmount Money, paymentID *uuid.UUID, createdAt, updatedAt time.Time) *Order {
+func RestoreOrder(id, buyerUserID uuid.UUID, status OrderStatus, items []OrderItem, totalAmount Money, paymentID *uuid.UUID, failureReason *string, createdAt, updatedAt time.Time) *Order {
 	return &Order{
-		ID:          id,
-		BuyerUserID: buyerUserID,
-		Status:      status,
-		Items:       items,
-		TotalAmount: totalAmount,
-		PaymentID:   paymentID,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
+		ID:            id,
+		BuyerUserID:   buyerUserID,
+		Status:        status,
+		Items:         items,
+		TotalAmount:   totalAmount,
+		PaymentID:     paymentID,
+		FailureReason: failureReason,
+		CreatedAt:     createdAt,
+		UpdatedAt:     updatedAt,
 	}
 }
 

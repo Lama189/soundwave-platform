@@ -52,6 +52,19 @@ func NewOrderItem(orderID uuid.UUID, itemType ItemType, itemID, artistID uuid.UU
 	return oi, nil
 }
 
+func RestoreOrderItem(id, orderID uuid.UUID, itemType ItemType, itemID, artistID uuid.UUID, price, platformFee, artistShare Money) OrderItem {
+	return OrderItem{
+		ID:          id,
+		OrderID:     orderID,
+		ItemType:    itemType,
+		ItemID:      itemID,
+		ArtistID:    artistID,
+		Price:       price,
+		PlatformFee: platformFee,
+		ArtistShare: artistShare,
+	}
+}
+
 func (oi *OrderItem) Validate() error {
 	if oi.ID == uuid.Nil {
 		return fmt.Errorf("%w: order item id is required", ErrInvalidInput)

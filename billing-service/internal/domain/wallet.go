@@ -45,6 +45,18 @@ func NewWallet(artistID uuid.UUID, currency Currency) (*Wallet, error) {
 	return w, nil
 }
 
+func RestoreWallet(id, artistID uuid.UUID, currency Currency, balance, lockedBalance Money, createdAt, updatedAt time.Time) *Wallet {
+	return &Wallet{
+		ID:            id,
+		ArtistID:      artistID,
+		Currency:      currency,
+		Balance:       balance,
+		LockedBalance: lockedBalance,
+		CreatedAt:     createdAt,
+		UpdatedAt:     updatedAt,
+	}
+}
+
 func (w *Wallet) Credit(amount Money) error {
 	if err := w.validateOperationAmount(amount); err != nil {
 		return err
