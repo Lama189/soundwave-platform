@@ -140,3 +140,26 @@ func (m *payoutModel) toDomain() *domain.Payout {
 		m.ProcessedAt,
 	)
 }
+
+type eventModel struct {
+	ID            uuid.UUID  `db:"id"`
+	AggregateType string     `db:"aggregate_type"`
+	AggregateID   uuid.UUID  `db:"aggregate_id"`
+	EventType     string     `db:"event_type"`
+	Payload       []byte     `db:"payload"`
+	CreatedAt     time.Time  `db:"created_at"`
+	ProcessedAt   *time.Time `db:"processed_at"`
+}
+
+func (m *eventModel) toDomain() *domain.Event {
+	return domain.RestoreEvent(
+		m.ID,
+		domain.AggregateType(m.AggregateType),
+		m.AggregateID,
+		domain.EventType(m.EventType),
+		m.Payload,
+		m.CreatedAt,
+		m.ProcessedAt,
+	)
+}
+
