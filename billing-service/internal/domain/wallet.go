@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const DefaultPlatformCurrency = CurrencyUSD
+
 type Wallet struct {
 	ID            uuid.UUID
 	ArtistID      uuid.UUID
@@ -17,12 +19,12 @@ type Wallet struct {
 	UpdatedAt     time.Time
 }
 
-func NewWallet(artistID uuid.UUID, currency Currency) (*Wallet, error) {
+func NewWallet(artistID uuid.UUID) (*Wallet, error) {
 	if artistID == uuid.Nil {
 		return nil, fmt.Errorf("%w: artist id is required", ErrInvalidInput)
 	}
 
-	zeroBalance, err := NewZeroMoney(currency)
+	zeroBalance, err := NewZeroMoney(DefaultPlatformCurrency)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize wallet balance: %w", err)
 	}
@@ -31,7 +33,7 @@ func NewWallet(artistID uuid.UUID, currency Currency) (*Wallet, error) {
 	w := &Wallet{
 		ID:            uuid.New(),
 		ArtistID:      artistID,
-		Currency:      currency,
+		Currency:      DefaultPlatformCurrency,
 		Balance:       zeroBalance,
 		LockedBalance: zeroBalance,
 		CreatedAt:     now,
