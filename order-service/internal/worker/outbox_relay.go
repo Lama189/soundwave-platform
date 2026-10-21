@@ -8,32 +8,22 @@ import (
 
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"github.com/Lama189/soundwave-platform/order-service/internal/config"
 )
 
 const (
 	OrderEventsExchange = "order-events"
 )
 
-type RelayConfig struct {
-	PollInterval time.Duration
-	BatchSize    int
-}
-
-func DefaultRelayConfig() RelayConfig {
-	return RelayConfig{
-		PollInterval: 1 * time.Second,
-		BatchSize:    50,
-	}
-}
-
 type OutboxRelay struct {
 	conn       *amqp.Connection
 	outboxRepo OutboxRepository
 	logger     *slog.Logger
-	cfg        RelayConfig
+	cfg        config.RelayConfig
 }
 
-func NewOutboxRelay(conn *amqp.Connection, outboxRepo OutboxRepository, logger *slog.Logger, cfg RelayConfig) *OutboxRelay {
+func NewOutboxRelay(conn *amqp.Connection, outboxRepo OutboxRepository, logger *slog.Logger, cfg config.RelayConfig) *OutboxRelay {
 	if cfg.PollInterval <= 0 {
 		cfg.PollInterval = 1 * time.Second
 	}
