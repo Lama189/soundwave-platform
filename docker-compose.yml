@@ -116,6 +116,26 @@ services:
     networks:
       - backend-network
 
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    ports:
+      - "50054:50054"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${ORDER_DB_NAME:-order_db}?sslmode=disable
+      - GRPC_PORT=:50054
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      - OUTBOX_RELAY_POLL_INTERVAL=1s
+      - OUTBOX_RELAY_BATCH_SIZE=50
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend-network
+
   api-gateway:
     build:
       context: .
