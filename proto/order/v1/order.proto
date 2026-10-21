@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/Lama189/soundwave-platform/gen/go/order/v1;orderpb";
+
+import "google/protobuf/timestamp.proto";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc ListBuyerOrders(ListBuyerOrdersRequest) returns (ListBuyerOrdersResponse);
+  rpc PayOrder(PayOrderRequest) returns (PayOrderResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+}
+
+message OrderItem {
+  string id = 1;
+  string order_id = 2;
+  string item_type = 3;
+  string item_id = 4;
+  string artist_id = 5;
+  int64 price = 6;
+  string currency = 7;
+}
+
+message Order {
+  string id = 1;
+  string buyer_user_id = 2;
+  string status = 3;
+  int64 total_amount = 4;
+  string currency = 5;
+  optional string payment_id = 6;
+  optional string failure_reason = 7;
+  repeated OrderItem items = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CreateOrderItem {
+  string item_type = 1;
+  string item_id = 2;
+  string artist_id = 3;
+  int64 price = 4;
+  string currency = 5;
+}
+
+message CreateOrderRequest {
+  string buyer_user_id = 1;
+  repeated CreateOrderItem items = 2;
+}
+
+message CreateOrderResponse {
+  Order order = 1;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+  optional string buyer_user_id = 2;
+}
+
+message GetOrderResponse {
+  Order order = 1;
+}
+
+message ListBuyerOrdersRequest {
+  string buyer_user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListBuyerOrdersResponse {
+  repeated Order orders = 1;
+}
+
+message PayOrderRequest {
+  string order_id = 1;
+  string payment_id = 2;
+}
+
+message PayOrderResponse {
+  Order order = 1;
+}
+
+message CancelOrderRequest {
+  string order_id = 1;
+  optional string buyer_user_id = 2;
+}
+
+message CancelOrderResponse {
+  Order order = 1;
+}
