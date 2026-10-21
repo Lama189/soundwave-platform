@@ -1,18 +1,13 @@
 package domain
 
-type Currency string
-
-const (
-	CurrencyUSD Currency = "USD"
-	CurrencyUZS Currency = "UZS"
-	CurrencyRUB Currency = "RUB"
+import (
+	"github.com/Lama189/soundwave-platform/pkg/money"
 )
 
-func (c Currency) IsValid() bool {
-	switch c {
-	case CurrencyUSD, CurrencyRUB, CurrencyUZS:
-		return true
-	default:
-		return false
-	}
-}
+type Currency = money.Currency
+
+const (
+	CurrencyUSD Currency = money.USD
+	CurrencyUZS Currency = money.UZS
+	CurrencyRUB Currency = money.RUB
+)

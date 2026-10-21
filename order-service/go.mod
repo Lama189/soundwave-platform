@@ -3,6 +3,7 @@ module github.com/Lama189/soundwave-platform/order-service
 go 1.26.5
 
 require (
+	github.com/Lama189/soundwave-platform/pkg v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pressly/goose/v3 v3.29.0
@@ -18,3 +19,5 @@ require (
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
+
+replace github.com/Lama189/soundwave-platform/pkg => ../pkg
