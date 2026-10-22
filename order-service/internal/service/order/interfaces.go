@@ -15,6 +15,7 @@ type UnitOfWorkManager interface {
 type OrderRepository interface {
 	Create(ctx context.Context, order *domain.Order) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Order, error)
+	GetByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.Order, error)
 	GetByBuyerID(ctx context.Context, buyerID uuid.UUID, limit, offset int) ([]*domain.Order, error)
 	Update(ctx context.Context, order *domain.Order) error
 }
@@ -34,12 +35,4 @@ type CatalogItemInfo struct {
 type CatalogClient interface {
 	GetTracksByIDs(ctx context.Context, ids []uuid.UUID) ([]CatalogItemInfo, error)
 	GetAlbumsByIDs(ctx context.Context, ids []uuid.UUID) ([]CatalogItemInfo, error)
-}
-
-type Service interface {
-	CreateOrder(ctx context.Context, input CreateOrderDTO) (*OrderOutputDTO, error)
-	GetOrder(ctx context.Context, input GetOrderDTO) (*OrderOutputDTO, error)
-	ListBuyerOrders(ctx context.Context, input ListBuyerOrdersDTO) (*ListOrdersOutputDTO, error)
-	PayOrder(ctx context.Context, input PayOrderDTO) (*OrderOutputDTO, error)
-	CancelOrder(ctx context.Context, input CancelOrderDTO) (*OrderOutputDTO, error)
 }

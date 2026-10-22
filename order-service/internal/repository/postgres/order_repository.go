@@ -81,21 +81,36 @@ func (r *OrderRepository) Create(ctx context.Context, order *domain.Order) error
 	return nil
 }
 
+const baseOrderSelectQuery = `
+	SELECT 
+		id,
+		buyer_user_id,
+		status,
+		total_amount,
+		currency,
+		payment_id,
+		failure_reason,
+		created_at,
+		updated_at
+	FROM orders
+	WHERE id = $1
+`
+
 func (r *OrderRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Order, error) {
-	const queryOrder = `
-		SELECT 
-			id,
-			buyer_user_id,
-			status,
-			total_amount,
-			currency,
-			payment_id,
-			failure_reason,
-			created_at,
-			updated_at
-		FROM orders
-		WHERE id = $1;
-	`
+	return r.getByID(ctx, id, false)
+}
+
+func (r *OrderRepository) GetByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.Order, error) {
+	return r.getByID(ctx, id, true)
+}
+
+func (r *OrderRepository) getByID(ctx context.Context, id uuid.UUID, forUpdate bool) (*domain.Order, error) {
+	queryOrder := baseOrderSelectQuery
+	if forUpdate {
+		queryOrder += "\nFOR UPDATE;"
+	} else {
+		queryOrder += ";"
+	}
 
 	var om orderModel
 	err := r.db.QueryRow(ctx, queryOrder, id).Scan(

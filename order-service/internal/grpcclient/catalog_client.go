@@ -18,8 +18,6 @@ type CatalogClient struct {
 	timeout time.Duration
 }
 
-var _ order.CatalogClient = (*CatalogClient)(nil)
-
 func NewCatalogClient(conn grpc.ClientConnInterface, defaultTimeout time.Duration) *CatalogClient {
 	if defaultTimeout <= 0 {
 		defaultTimeout = 5 * time.Second

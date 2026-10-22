@@ -16,8 +16,6 @@ type OrderService struct {
 	catalog CatalogClient
 }
 
-var _ Service = (*OrderService)(nil)
-
 func NewOrderService(uow UnitOfWorkManager, orders OrderRepository, catalog CatalogClient) *OrderService {
 	return &OrderService{
 		uow:     uow,
@@ -127,9 +125,17 @@ func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderO
 
 	var updatedOrder *domain.Order
 	err := s.uow.Do(ctx, func(work uow.UnitOfWork) error {
-		order, err := work.Orders().GetByID(ctx, input.OrderID)
+		order, err := work.Orders().GetByIDForUpdate(ctx, input.OrderID)
 		if err != nil {
 			return fmt.Errorf("get order %s for payment: %w", input.OrderID, err)
+		}
+
+		if order.Status == domain.OrderStatusPaid {
+			if order.PaymentID != nil && *order.PaymentID == input.PaymentID {
+				updatedOrder = order
+				return nil
+			}
+			return domain.ErrOrderAlreadyPaid
 		}
 
 		if err := order.MarkPaid(input.PaymentID); err != nil {
@@ -236,7 +242,7 @@ func (s *OrderService) CancelOrder(ctx context.Context, input CancelOrderDTO) (*
 
 	var cancelledOrder *domain.Order
 	err := s.uow.Do(ctx, func(work uow.UnitOfWork) error {
-		order, err := work.Orders().GetByID(ctx, input.OrderID)
+		order, err := work.Orders().GetByIDForUpdate(ctx, input.OrderID)
 		if err != nil {
 			return fmt.Errorf("get order for cancellation: %w", err)
 		}
