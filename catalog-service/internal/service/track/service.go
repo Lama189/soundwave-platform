@@ -153,7 +153,7 @@ func (s *Service) UploadTrack(ctx context.Context, currentUserID uuid.UUID, dto 
 		return nil, domain.ErrUnsupportedAudioFormat
 	}
 
-	newTrack, err := domain.NewTrack(artist.ID, dto.Title)
+	newTrack, err := domain.NewTrack(artist.ID, dto.Title, dto.Price, dto.Currency)
 	if err != nil {
 		return nil, fmt.Errorf("create track draft: %w", err)
 	}
@@ -426,6 +426,19 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*TrackOutputDTO, e
 	return toOutputDTO(t), nil
 }
 
+func (s *Service) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*TrackOutputDTO, error) {
+	if len(ids) == 0 {
+		return []*TrackOutputDTO{}, nil
+	}
+
+	tracks, err := s.tracks.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get tracks by ids: %w", err)
+	}
+
+	return toOutputDTOList(tracks), nil
+}
+
 func (s *Service) GetByArtistID(ctx context.Context, artistID uuid.UUID, limit, offset int) ([]*TrackOutputDTO, error) {
 	if _, err := s.artists.GetByID(ctx, artistID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -477,7 +490,7 @@ func (s *Service) Update(ctx context.Context, currentUserID, trackID uuid.UUID, 
 		}
 	}
 
-	if err := t.Update(dto.Title, dto.AlbumID, dto.CoverKey); err != nil {
+	if err := t.Update(dto.Title, dto.AlbumID, dto.CoverKey, dto.Price, dto.Currency); err != nil {
 		return nil, fmt.Errorf("update track entity: %w", err)
 	}
 

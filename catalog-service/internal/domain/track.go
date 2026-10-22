@@ -50,17 +50,25 @@ type Track struct {
 	FileKey    string
 	PreviewKey string
 	RawKey     string
+	Price      int64
+	Currency   Currency
 	Status     TrackStatus
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
 
-func NewTrack(artistID uuid.UUID, title string) (*Track, error) {
+func NewTrack(artistID uuid.UUID, title string, price int64, currency Currency) (*Track, error) {
+	if currency == "" {
+		currency = CurrencyUSD
+	}
+
 	now := time.Now().UTC()
 	t := &Track{
 		ID:        uuid.New(),
 		ArtistID:  artistID,
 		Title:     strings.TrimSpace(title),
+		Price:     price,
+		Currency:  currency,
 		Status:    TrackStatusDraft,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -79,6 +87,8 @@ func RestoreTrack(
 	title string,
 	duration time.Duration,
 	coverKey, fileKey, previewKey, rawKey string,
+	price int64,
+	currency Currency,
 	status TrackStatus,
 	createdAt, updatedAt time.Time,
 ) *Track {
@@ -92,6 +102,8 @@ func RestoreTrack(
 		FileKey:    fileKey,
 		PreviewKey: previewKey,
 		RawKey:     rawKey,
+		Price:      price,
+		Currency:   currency,
 		Status:     status,
 		CreatedAt:  createdAt,
 		UpdatedAt:  updatedAt,
@@ -157,12 +169,21 @@ func (t *Track) MarkAsProcessing() error {
 	return nil
 }
 
-func (t *Track) Update(title string, albumID *uuid.UUID, coverKey string) error {
+func (t *Track) SetPrice(price int64, currency Currency) error {
+	t.Price = price
+	t.Currency = currency
+	t.UpdatedAt = time.Now().UTC()
+	return t.Validate()
+}
+
+func (t *Track) Update(title string, albumID *uuid.UUID, coverKey string, price int64, currency Currency) error {
 	t.Title = strings.TrimSpace(title)
 	t.AlbumID = albumID
 	if trimmedCoverKey := strings.TrimSpace(coverKey); trimmedCoverKey != "" {
 		t.CoverKey = trimmedCoverKey
 	}
+	t.Price = price
+	t.Currency = currency
 	t.UpdatedAt = time.Now().UTC()
 
 	return t.Validate()
@@ -183,6 +204,14 @@ func (t *Track) Validate() error {
 
 	if t.Duration < 0 {
 		return fmt.Errorf("track duration cannot be negative")
+	}
+
+	if t.Price < 0 {
+		return fmt.Errorf("%w: track price cannot be negative, got %d", ErrNegativePrice, t.Price)
+	}
+
+	if !t.Currency.IsValid() {
+		return fmt.Errorf("%w: %q", ErrUnsupportedCurrency, t.Currency)
 	}
 
 	if !t.Status.IsValid() {

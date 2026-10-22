@@ -19,9 +19,9 @@ func NewAlbumRepository(db DB) *AlbumRepository {
 func (r *AlbumRepository) Create(ctx context.Context, album *domain.Album) error {
 	const query = `
 		INSERT INTO albums (
-			artist_id, title, description, cover_key, created_at, updated_at
+			artist_id, title, description, cover_key, price, currency, created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id;
 	`
 
@@ -32,6 +32,8 @@ func (r *AlbumRepository) Create(ctx context.Context, album *domain.Album) error
 		album.Title,
 		album.Description,
 		album.CoverKey,
+		album.Price,
+		string(album.Currency),
 		album.CreatedAt,
 		album.UpdatedAt,
 	).Scan(&album.ID)
@@ -44,7 +46,7 @@ func (r *AlbumRepository) Create(ctx context.Context, album *domain.Album) error
 
 func (r *AlbumRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Album, error) {
 	const query = `
-		SELECT id, artist_id, title, description, cover_key, created_at, updated_at
+		SELECT id, artist_id, title, description, cover_key, price, currency, created_at, updated_at
 		FROM albums
 		WHERE id = $1;
 	`
@@ -56,6 +58,8 @@ func (r *AlbumRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Al
 		&m.Title,
 		&m.Description,
 		&m.CoverKey,
+		&m.Price,
+		&m.Currency,
 		&m.CreatedAt,
 		&m.UpdatedAt,
 	)
@@ -68,7 +72,7 @@ func (r *AlbumRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Al
 
 func (r *AlbumRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID, limit, offset int) ([]*domain.Album, error) {
 	const query = `
-		SELECT id, artist_id, title, description, cover_key, created_at, updated_at
+		SELECT id, artist_id, title, description, cover_key, price, currency, created_at, updated_at
 		FROM albums
 		WHERE artist_id = $1
 		ORDER BY created_at DESC
@@ -90,6 +94,51 @@ func (r *AlbumRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID,
 			&m.Title,
 			&m.Description,
 			&m.CoverKey,
+			&m.Price,
+			&m.Currency,
+			&m.CreatedAt,
+			&m.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan album: %w", err)
+		}
+		albums = append(albums, m.toDomain())
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate albums: %w", err)
+	}
+
+	return albums, nil
+}
+
+func (r *AlbumRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Album, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	const query = `
+		SELECT id, artist_id, title, description, cover_key, price, currency, created_at, updated_at
+		FROM albums
+		WHERE id = ANY($1);
+	`
+
+	rows, err := r.db.Query(ctx, query, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get albums by ids: %w", mapError(err))
+	}
+	defer rows.Close()
+
+	var albums []*domain.Album
+	for rows.Next() {
+		var m albumModel
+		if err := rows.Scan(
+			&m.ID,
+			&m.ArtistID,
+			&m.Title,
+			&m.Description,
+			&m.CoverKey,
+			&m.Price,
+			&m.Currency,
 			&m.CreatedAt,
 			&m.UpdatedAt,
 		); err != nil {
@@ -108,8 +157,8 @@ func (r *AlbumRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID,
 func (r *AlbumRepository) Update(ctx context.Context, album *domain.Album) error {
 	const query = `
 		UPDATE albums
-		SET title = $1, description = $2, cover_key = $3, updated_at = $4
-		WHERE id = $5;
+		SET title = $1, description = $2, cover_key = $3, price = $4, currency = $5, updated_at = $6
+		WHERE id = $7;
 	`
 
 	cmdTag, err := r.db.Exec(
@@ -118,6 +167,8 @@ func (r *AlbumRepository) Update(ctx context.Context, album *domain.Album) error
 		album.Title,
 		album.Description,
 		album.CoverKey,
+		album.Price,
+		string(album.Currency),
 		album.UpdatedAt,
 		album.ID,
 	)

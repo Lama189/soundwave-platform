@@ -19,8 +19,11 @@ CREATE TABLE IF NOT EXISTS albums (
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     cover_key VARCHAR(512) NOT NULL DEFAULT '',
+    price BIGINT NOT NULL DEFAULT 0,
+    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_albums_price CHECK (price >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_albums_artist_id ON albums(artist_id);
@@ -35,9 +38,12 @@ CREATE TABLE IF NOT EXISTS tracks (
     file_key VARCHAR(512) NOT NULL DEFAULT '',
     preview_key VARCHAR(512) NOT NULL DEFAULT '',
     raw_key VARCHAR(512) NOT NULL DEFAULT '',
+    price BIGINT NOT NULL DEFAULT 0,
+    currency VARCHAR(3) NOT NULL DEFAULT 'USD',
     status track_status NOT NULL DEFAULT 'draft',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_tracks_price CHECK (price >= 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_tracks_artist_id ON tracks(artist_id);

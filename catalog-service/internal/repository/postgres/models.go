@@ -33,6 +33,8 @@ type albumModel struct {
 	Title       string    `db:"title"`
 	Description string    `db:"description"`
 	CoverKey    string    `db:"cover_key"`
+	Price       int64     `db:"price"`
+	Currency    string    `db:"currency"`
 	CreatedAt   time.Time `db:"created_at"`
 	UpdatedAt   time.Time `db:"updated_at"`
 }
@@ -44,6 +46,8 @@ func (m *albumModel) toDomain() *domain.Album {
 		m.Title,
 		m.Description,
 		m.CoverKey,
+		m.Price,
+		domain.Currency(m.Currency),
 		m.CreatedAt,
 		m.UpdatedAt,
 	)
@@ -59,6 +63,8 @@ type trackModel struct {
 	FileKey         string     `db:"file_key"`
 	PreviewKey      string     `db:"preview_key"`
 	RawKey          string     `db:"raw_key"`
+	Price           int64      `db:"price"`
+	Currency        string     `db:"currency"`
 	Status          string     `db:"status"`
 	CreatedAt       time.Time  `db:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at"`
@@ -75,6 +81,8 @@ func (m *trackModel) toDomain() *domain.Track {
 		m.FileKey,
 		m.PreviewKey,
 		m.RawKey,
+		m.Price,
+		domain.Currency(m.Currency),
 		domain.TrackStatus(m.Status),
 		m.CreatedAt,
 		m.UpdatedAt,

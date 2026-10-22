@@ -21,10 +21,10 @@ func (r *TrackRepository) Create(ctx context.Context, track *domain.Track) error
 	const query = `
 		INSERT INTO tracks (
 			id, artist_id, album_id, title, duration_seconds,
-			cover_key, file_key, preview_key, raw_key, status,
+			cover_key, file_key, preview_key, raw_key, price, currency, status,
 			created_at, updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id;
 	`
 
@@ -40,6 +40,8 @@ func (r *TrackRepository) Create(ctx context.Context, track *domain.Track) error
 		track.FileKey,
 		track.PreviewKey,
 		track.RawKey,
+		track.Price,
+		string(track.Currency),
 		string(track.Status),
 		track.CreatedAt,
 		track.UpdatedAt,
@@ -54,7 +56,7 @@ func (r *TrackRepository) Create(ctx context.Context, track *domain.Track) error
 func (r *TrackRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Track, error) {
 	const query = `
 		SELECT id, artist_id, album_id, title, duration_seconds,
-		       cover_key, file_key, preview_key, raw_key, status, created_at, updated_at
+		       cover_key, file_key, preview_key, raw_key, price, currency, status, created_at, updated_at
 		FROM tracks
 		WHERE id = $1;
 	`
@@ -70,6 +72,8 @@ func (r *TrackRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Tr
 		&m.FileKey,
 		&m.PreviewKey,
 		&m.RawKey,
+		&m.Price,
+		&m.Currency,
 		&m.Status,
 		&m.CreatedAt,
 		&m.UpdatedAt,
@@ -84,7 +88,7 @@ func (r *TrackRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Tr
 func (r *TrackRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID, limit, offset int) ([]*domain.Track, error) {
 	const query = `
 		SELECT id, artist_id, album_id, title, duration_seconds,
-		       cover_key, file_key, preview_key, raw_key, status, created_at, updated_at
+		       cover_key, file_key, preview_key, raw_key, price, currency, status, created_at, updated_at
 		FROM tracks
 		WHERE artist_id = $1
 		ORDER BY created_at DESC
@@ -110,6 +114,8 @@ func (r *TrackRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID,
 			&m.FileKey,
 			&m.PreviewKey,
 			&m.RawKey,
+			&m.Price,
+			&m.Currency,
 			&m.Status,
 			&m.CreatedAt,
 			&m.UpdatedAt,
@@ -129,7 +135,7 @@ func (r *TrackRepository) GetByArtistID(ctx context.Context, artistID uuid.UUID,
 func (r *TrackRepository) GetByAlbumID(ctx context.Context, albumID uuid.UUID) ([]*domain.Track, error) {
 	const query = `
 		SELECT id, artist_id, album_id, title, duration_seconds,
-		       cover_key, file_key, preview_key, raw_key, status, created_at, updated_at
+		       cover_key, file_key, preview_key, raw_key, price, currency, status, created_at, updated_at
 		FROM tracks
 		WHERE album_id = $1
 		ORDER BY created_at ASC;
@@ -154,6 +160,8 @@ func (r *TrackRepository) GetByAlbumID(ctx context.Context, albumID uuid.UUID) (
 			&m.FileKey,
 			&m.PreviewKey,
 			&m.RawKey,
+			&m.Price,
+			&m.Currency,
 			&m.Status,
 			&m.CreatedAt,
 			&m.UpdatedAt,
@@ -177,7 +185,7 @@ func (r *TrackRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*dom
 
 	const query = `
 		SELECT id, artist_id, album_id, title, duration_seconds,
-		       cover_key, file_key, preview_key, raw_key, status, created_at, updated_at
+		       cover_key, file_key, preview_key, raw_key, price, currency, status, created_at, updated_at
 		FROM tracks
 		WHERE id = ANY($1);
 	`
@@ -201,6 +209,8 @@ func (r *TrackRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*dom
 			&m.FileKey,
 			&m.PreviewKey,
 			&m.RawKey,
+			&m.Price,
+			&m.Currency,
 			&m.Status,
 			&m.CreatedAt,
 			&m.UpdatedAt,
@@ -220,8 +230,8 @@ func (r *TrackRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*dom
 func (r *TrackRepository) Update(ctx context.Context, track *domain.Track) error {
 	const query = `
 		UPDATE tracks
-		SET title = $1, album_id = $2, cover_key = $3, updated_at = $4
-		WHERE id = $5;
+		SET title = $1, album_id = $2, cover_key = $3, price = $4, currency = $5, updated_at = $6
+		WHERE id = $7;
 	`
 
 	cmdTag, err := r.db.Exec(
@@ -230,6 +240,8 @@ func (r *TrackRepository) Update(ctx context.Context, track *domain.Track) error
 		track.Title,
 		track.AlbumID,
 		track.CoverKey,
+		track.Price,
+		string(track.Currency),
 		track.UpdatedAt,
 		track.ID,
 	)

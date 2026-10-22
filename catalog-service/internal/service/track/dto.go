@@ -11,6 +11,8 @@ type UploadTrackDTO struct {
 	AlbumID  *uuid.UUID
 	Title    string
 	FileName string
+	Price    int64
+	Currency domain.Currency
 }
 
 type CompleteProcessingDTO struct {
@@ -24,6 +26,8 @@ type UpdateTrackDTO struct {
 	Title    string
 	AlbumID  *uuid.UUID
 	CoverKey string
+	Price    int64
+	Currency domain.Currency
 }
 
 type TrackOutputDTO struct {
@@ -36,6 +40,8 @@ type TrackOutputDTO struct {
 	FileKey    string
 	PreviewKey string
 	RawKey     string
+	Price      int64
+	Currency   domain.Currency
 	Status     string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
@@ -61,6 +67,8 @@ func toOutputDTO(t *domain.Track) *TrackOutputDTO {
 		FileKey:    t.FileKey,
 		PreviewKey: t.PreviewKey,
 		RawKey:     t.RawKey,
+		Price:      t.Price,
+		Currency:   t.Currency,
 		Status:     string(t.Status),
 		CreatedAt:  t.CreatedAt,
 		UpdatedAt:  t.UpdatedAt,

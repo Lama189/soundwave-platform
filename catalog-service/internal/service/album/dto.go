@@ -12,12 +12,16 @@ type CreateAlbumDTO struct {
 	Title       string
 	Description string
 	CoverKey    string
+	Price       int64
+	Currency    domain.Currency
 }
 
 type UpdateAlbumDTO struct {
 	Title       string
 	Description string
 	CoverKey    string
+	Price       int64
+	Currency    domain.Currency
 }
 
 type AlbumOutputDTO struct {
@@ -26,6 +30,8 @@ type AlbumOutputDTO struct {
 	Title       string
 	Description string
 	CoverKey    string
+	Price       int64
+	Currency    domain.Currency
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -41,6 +47,8 @@ func toOutputDTO(a *domain.Album) *AlbumOutputDTO {
 		Title:       a.Title,
 		Description: a.Description,
 		CoverKey:    a.CoverKey,
+		Price:       a.Price,
+		Currency:    a.Currency,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,
 	}

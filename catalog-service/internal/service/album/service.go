@@ -36,6 +36,8 @@ func (s *Service) Create(ctx context.Context, currentUserID uuid.UUID, dto Creat
 		dto.Title,
 		dto.Description,
 		dto.CoverKey,
+		dto.Price,
+		dto.Currency,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create album: %w", err)
@@ -61,6 +63,19 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*AlbumOutputDTO, e
 	}
 
 	return toOutputDTO(a), nil
+}
+
+func (s *Service) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*AlbumOutputDTO, error) {
+	if len(ids) == 0 {
+		return []*AlbumOutputDTO{}, nil
+	}
+
+	albums, err := s.albums.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get albums by ids: %w", err)
+	}
+
+	return toOutputDTOList(albums), nil
 }
 
 func (s *Service) GetByArtistID(ctx context.Context, artistID uuid.UUID, limit, offset int) ([]*AlbumOutputDTO, error) {
@@ -100,7 +115,7 @@ func (s *Service) Update(ctx context.Context, currentUserID, albumID uuid.UUID, 
 		return nil, domain.ErrNotAlbumOwner
 	}
 
-	if err := album.Update(dto.Title, dto.Description, dto.CoverKey); err != nil {
+	if err := album.Update(dto.Title, dto.Description, dto.CoverKey, dto.Price, dto.Currency); err != nil {
 		return nil, fmt.Errorf("update album entity: %w", err)
 	}
 
