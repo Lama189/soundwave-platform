@@ -177,20 +177,17 @@ func toCreateOrderItemDTOs(pbItems []*orderpb.CreateOrderItem) ([]order.CreateOr
 
 		itemID, err := uuid.Parse(item.GetItemId())
 		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid order item id format")
+			return nil, status.Errorf(codes.InvalidArgument, "invalid order item [%d] id format: %v", i, err)
 		}
 
-		artistID, err := uuid.Parse(item.GetArtistId())
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid artist id format")
+		itemType := domain.ItemType(item.GetItemType())
+		if !itemType.IsValid() {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid order item [%d] type %q", i, item.GetItemType())
 		}
 
 		items = append(items, order.CreateOrderItemDTO{
-			ItemType: domain.ItemType(item.GetItemType()),
+			ItemType: itemType,
 			ItemID:   itemID,
-			ArtistID: artistID,
-			Price:    item.GetPrice(),
-			Currency: domain.Currency(item.GetCurrency()),
 		})
 	}
 

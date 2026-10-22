@@ -12,11 +12,13 @@ import (
 	orderpb "github.com/Lama189/soundwave-platform/gen/go/order/v1"
 	"github.com/Lama189/soundwave-platform/order-service/internal/config"
 	deliveryGrpc "github.com/Lama189/soundwave-platform/order-service/internal/delivery/grpc"
+	"github.com/Lama189/soundwave-platform/order-service/internal/grpcclient"
 	"github.com/Lama189/soundwave-platform/order-service/internal/repository/postgres"
 	"github.com/Lama189/soundwave-platform/order-service/internal/service/order"
 	"github.com/Lama189/soundwave-platform/order-service/internal/worker"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -50,7 +52,18 @@ func main() {
 	outboxRepo := postgres.NewOutboxRepository(pgPool)
 	uowManager := postgres.NewUnitOfWorkManager(pgPool)
 
-	orderService := order.NewOrderService(uowManager, orderRepo)
+	catalogConn, err := grpc.NewClient(
+		cfg.Catalog.URL,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalf("failed to connect to catalog-service at %s: %v", cfg.Catalog.URL, err)
+	}
+	defer catalogConn.Close()
+
+	catalogClient := grpcclient.NewCatalogClient(catalogConn, cfg.Catalog.Timeout)
+
+	orderService := order.NewOrderService(uowManager, orderRepo, catalogClient)
 
 	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)
 	if err := outboxRelay.Start(ctx); err != nil {

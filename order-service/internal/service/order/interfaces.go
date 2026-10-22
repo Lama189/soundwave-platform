@@ -23,6 +23,19 @@ type OutboxRepository interface {
 	Record(ctx context.Context, event *domain.Event) error
 }
 
+type CatalogItemInfo struct {
+	ID       uuid.UUID
+	ArtistID uuid.UUID
+	Price    int64
+	Currency domain.Currency
+	Status   string
+}
+
+type CatalogClient interface {
+	GetTracksByIDs(ctx context.Context, ids []uuid.UUID) ([]CatalogItemInfo, error)
+	GetAlbumsByIDs(ctx context.Context, ids []uuid.UUID) ([]CatalogItemInfo, error)
+}
+
 type Service interface {
 	CreateOrder(ctx context.Context, input CreateOrderDTO) (*OrderOutputDTO, error)
 	GetOrder(ctx context.Context, input GetOrderDTO) (*OrderOutputDTO, error)

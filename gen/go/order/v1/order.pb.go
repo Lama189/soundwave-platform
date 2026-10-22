@@ -234,9 +234,6 @@ type CreateOrderItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ItemType      string                 `protobuf:"bytes,1,opt,name=item_type,json=itemType,proto3" json:"item_type,omitempty"`
 	ItemId        string                 `protobuf:"bytes,2,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
-	ArtistId      string                 `protobuf:"bytes,3,opt,name=artist_id,json=artistId,proto3" json:"artist_id,omitempty"`
-	Price         int64                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
-	Currency      string                 `protobuf:"bytes,5,opt,name=currency,proto3" json:"currency,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -281,27 +278,6 @@ func (x *CreateOrderItem) GetItemType() string {
 func (x *CreateOrderItem) GetItemId() string {
 	if x != nil {
 		return x.ItemId
-	}
-	return ""
-}
-
-func (x *CreateOrderItem) GetArtistId() string {
-	if x != nil {
-		return x.ArtistId
-	}
-	return ""
-}
-
-func (x *CreateOrderItem) GetPrice() int64 {
-	if x != nil {
-		return x.Price
-	}
-	return 0
-}
-
-func (x *CreateOrderItem) GetCurrency() string {
-	if x != nil {
-		return x.Currency
 	}
 	return ""
 }
@@ -823,13 +799,10 @@ const file_order_v1_order_proto_rawDesc = "" +
 	"updated_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\r\n" +
 	"\v_payment_idB\x11\n" +
-	"\x0f_failure_reason\"\x96\x01\n" +
+	"\x0f_failure_reason\"G\n" +
 	"\x0fCreateOrderItem\x12\x1b\n" +
 	"\titem_type\x18\x01 \x01(\tR\bitemType\x12\x17\n" +
-	"\aitem_id\x18\x02 \x01(\tR\x06itemId\x12\x1b\n" +
-	"\tartist_id\x18\x03 \x01(\tR\bartistId\x12\x14\n" +
-	"\x05price\x18\x04 \x01(\x03R\x05price\x12\x1a\n" +
-	"\bcurrency\x18\x05 \x01(\tR\bcurrency\"i\n" +
+	"\aitem_id\x18\x02 \x01(\tR\x06itemId\"i\n" +
 	"\x12CreateOrderRequest\x12\"\n" +
 	"\rbuyer_user_id\x18\x01 \x01(\tR\vbuyerUserId\x12/\n" +
 	"\x05items\x18\x02 \x03(\v2\x19.order.v1.CreateOrderItemR\x05items\"<\n" +

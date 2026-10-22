@@ -10,9 +10,6 @@ import (
 type CreateOrderItemDTO struct {
 	ItemType domain.ItemType
 	ItemID   uuid.UUID
-	ArtistID uuid.UUID
-	Price    int64
-	Currency domain.Currency
 }
 
 type CreateOrderDTO struct {

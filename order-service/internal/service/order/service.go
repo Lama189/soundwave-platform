@@ -11,16 +11,18 @@ import (
 )
 
 type OrderService struct {
-	uow    UnitOfWorkManager
-	orders OrderRepository
+	uow     UnitOfWorkManager
+	orders  OrderRepository
+	catalog CatalogClient
 }
 
 var _ Service = (*OrderService)(nil)
 
-func NewOrderService(uow UnitOfWorkManager, orders OrderRepository) *OrderService {
+func NewOrderService(uow UnitOfWorkManager, orders OrderRepository, catalog CatalogClient) *OrderService {
 	return &OrderService{
-		uow:    uow,
-		orders: orders,
+		uow:     uow,
+		orders:  orders,
+		catalog: catalog,
 	}
 }
 
@@ -32,15 +34,62 @@ func (s *OrderService) CreateOrder(ctx context.Context, input CreateOrderDTO) (*
 		return nil, domain.ErrEmptyOrderItems
 	}
 
+	var trackIDs []uuid.UUID
+	var albumIDs []uuid.UUID
+
+	for i, it := range input.Items {
+		if it.ItemID == uuid.Nil {
+			return nil, fmt.Errorf("%w: item [%d] id is nil", domain.ErrInvalidInput, i)
+		}
+		switch it.ItemType {
+		case domain.ItemTypeTrack:
+			trackIDs = append(trackIDs, it.ItemID)
+		case domain.ItemTypeAlbum:
+			albumIDs = append(albumIDs, it.ItemID)
+		default:
+			return nil, fmt.Errorf("%w: unsupported item type %q", domain.ErrInvalidInput, it.ItemType)
+		}
+	}
+
+	catalogItemsMap := make(map[uuid.UUID]CatalogItemInfo, len(input.Items))
+
+	if len(trackIDs) > 0 {
+		tracks, err := s.catalog.GetTracksByIDs(ctx, trackIDs)
+		if err != nil {
+			return nil, fmt.Errorf("fetch tracks from catalog: %w", err)
+		}
+		for _, t := range tracks {
+			if t.Status != "ready" {
+				return nil, fmt.Errorf("%w: track %s is not ready (status: %s)", domain.ErrConflict, t.ID, t.Status)
+			}
+			catalogItemsMap[t.ID] = t
+		}
+	}
+
+	if len(albumIDs) > 0 {
+		albums, err := s.catalog.GetAlbumsByIDs(ctx, albumIDs)
+		if err != nil {
+			return nil, fmt.Errorf("fetch albums from catalog: %w", err)
+		}
+		for _, a := range albums {
+			catalogItemsMap[a.ID] = a
+		}
+	}
+
 	domainItems := make([]domain.OrderItem, len(input.Items))
 	for i, it := range input.Items {
+		info, found := catalogItemsMap[it.ItemID]
+		if !found {
+			return nil, fmt.Errorf("%w: item %s of type %s not found in catalog", domain.ErrNotFound, it.ItemID, it.ItemType)
+		}
+
 		item, err := domain.NewOrderItem(
 			uuid.Nil,
 			it.ItemType,
 			it.ItemID,
-			it.ArtistID,
-			it.Price,
-			it.Currency,
+			info.ArtistID,
+			info.Price,
+			info.Currency,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("invalid order item [%d]: %w", i, err)

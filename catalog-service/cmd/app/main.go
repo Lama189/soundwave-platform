@@ -13,6 +13,7 @@ import (
 	deliveryGrpc "github.com/Lama189/soundwave-platform/catalog-service/internal/delivery/grpc"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/infrastructure/storage"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/repository/postgres"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/album"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/artist"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/worker"
@@ -62,6 +63,7 @@ func main() {
 
 	artistService := artist.NewService(artistRepo)
 	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage)
+	albumService := album.NewService(albumRepo, artistRepo)
 
 	rawAudioConsumer := deliveryAmqp.NewRawAudioConsumer(amqpConn, trackService, logger)
 	if err := rawAudioConsumer.Start(ctx); err != nil {
@@ -81,9 +83,11 @@ func main() {
 	grpcServer := grpc.NewServer()
 	artistGrpcHandler := deliveryGrpc.NewArtistGRPCServer(artistService)
 	trackGrpcHandler := deliveryGrpc.NewTrackGRPCServer(trackService)
+	albumGRPCHandler := deliveryGrpc.NewAlbumGRPCServer(albumService)
 
 	catalogpb.RegisterArtistServiceServer(grpcServer, artistGrpcHandler)
 	catalogpb.RegisterTrackServiceServer(grpcServer, trackGrpcHandler)
+	catalogpb.RegisterAlbumServiceServer(grpcServer, albumGRPCHandler)
 
 	lis, err := net.Listen("tcp", cfg.GRPC.Port)
 	if err != nil {

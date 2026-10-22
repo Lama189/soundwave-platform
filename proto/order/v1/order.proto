@@ -40,9 +40,6 @@ message Order {
 message CreateOrderItem {
   string item_type = 1;
   string item_id = 2;
-  string artist_id = 3;
-  int64 price = 4;
-  string currency = 5;
 }
 
 message CreateOrderRequest {

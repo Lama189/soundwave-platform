@@ -11,6 +11,8 @@ service TrackService {
   rpc ConfirmUpload(ConfirmUploadRequest) returns (ConfirmUploadResponse);
   rpc CompleteProcessing(CompleteProcessingRequest) returns (CompleteProcessingResponse);
   rpc FailProcessing(FailProcessingRequest) returns (FailProcessingResponse);
+  rpc GetTrack(GetTrackRequest) returns (GetTrackResponse);
+  rpc GetTracks(GetTracksRequest) returns (GetTracksResponse);
 }
 
 message Track {
@@ -26,6 +28,8 @@ message Track {
   string status = 10;
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
+  int64 price = 13;
+  string currency = 14;
 }
 
 message UploadTrackRequest {
@@ -33,6 +37,8 @@ message UploadTrackRequest {
   string title = 2;
   string file_name = 3;
   optional string album_id = 4;
+  int64 price = 5;
+  string currency = 6;
 }
 
 message UploadTrackResponse {
@@ -66,3 +72,19 @@ message FailProcessingRequest {
 }
 
 message FailProcessingResponse {}
+
+message GetTrackRequest {
+  string track_id = 1;
+}
+
+message GetTrackResponse {
+  Track track = 1;
+}
+
+message GetTracksRequest {
+  repeated string track_ids = 1;
+}
+
+message GetTracksResponse {
+  repeated Track tracks = 1;
+}

@@ -23,6 +23,8 @@ const (
 	TrackService_ConfirmUpload_FullMethodName      = "/catalog.v1.TrackService/ConfirmUpload"
 	TrackService_CompleteProcessing_FullMethodName = "/catalog.v1.TrackService/CompleteProcessing"
 	TrackService_FailProcessing_FullMethodName     = "/catalog.v1.TrackService/FailProcessing"
+	TrackService_GetTrack_FullMethodName           = "/catalog.v1.TrackService/GetTrack"
+	TrackService_GetTracks_FullMethodName          = "/catalog.v1.TrackService/GetTracks"
 )
 
 // TrackServiceClient is the client API for TrackService service.
@@ -33,6 +35,8 @@ type TrackServiceClient interface {
 	ConfirmUpload(ctx context.Context, in *ConfirmUploadRequest, opts ...grpc.CallOption) (*ConfirmUploadResponse, error)
 	CompleteProcessing(ctx context.Context, in *CompleteProcessingRequest, opts ...grpc.CallOption) (*CompleteProcessingResponse, error)
 	FailProcessing(ctx context.Context, in *FailProcessingRequest, opts ...grpc.CallOption) (*FailProcessingResponse, error)
+	GetTrack(ctx context.Context, in *GetTrackRequest, opts ...grpc.CallOption) (*GetTrackResponse, error)
+	GetTracks(ctx context.Context, in *GetTracksRequest, opts ...grpc.CallOption) (*GetTracksResponse, error)
 }
 
 type trackServiceClient struct {
@@ -83,6 +87,26 @@ func (c *trackServiceClient) FailProcessing(ctx context.Context, in *FailProcess
 	return out, nil
 }
 
+func (c *trackServiceClient) GetTrack(ctx context.Context, in *GetTrackRequest, opts ...grpc.CallOption) (*GetTrackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrackResponse)
+	err := c.cc.Invoke(ctx, TrackService_GetTrack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trackServiceClient) GetTracks(ctx context.Context, in *GetTracksRequest, opts ...grpc.CallOption) (*GetTracksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTracksResponse)
+	err := c.cc.Invoke(ctx, TrackService_GetTracks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrackServiceServer is the server API for TrackService service.
 // All implementations must embed UnimplementedTrackServiceServer
 // for forward compatibility.
@@ -91,6 +115,8 @@ type TrackServiceServer interface {
 	ConfirmUpload(context.Context, *ConfirmUploadRequest) (*ConfirmUploadResponse, error)
 	CompleteProcessing(context.Context, *CompleteProcessingRequest) (*CompleteProcessingResponse, error)
 	FailProcessing(context.Context, *FailProcessingRequest) (*FailProcessingResponse, error)
+	GetTrack(context.Context, *GetTrackRequest) (*GetTrackResponse, error)
+	GetTracks(context.Context, *GetTracksRequest) (*GetTracksResponse, error)
 	mustEmbedUnimplementedTrackServiceServer()
 }
 
@@ -112,6 +138,12 @@ func (UnimplementedTrackServiceServer) CompleteProcessing(context.Context, *Comp
 }
 func (UnimplementedTrackServiceServer) FailProcessing(context.Context, *FailProcessingRequest) (*FailProcessingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FailProcessing not implemented")
+}
+func (UnimplementedTrackServiceServer) GetTrack(context.Context, *GetTrackRequest) (*GetTrackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTrack not implemented")
+}
+func (UnimplementedTrackServiceServer) GetTracks(context.Context, *GetTracksRequest) (*GetTracksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTracks not implemented")
 }
 func (UnimplementedTrackServiceServer) mustEmbedUnimplementedTrackServiceServer() {}
 func (UnimplementedTrackServiceServer) testEmbeddedByValue()                      {}
@@ -206,6 +238,42 @@ func _TrackService_FailProcessing_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrackService_GetTrack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).GetTrack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_GetTrack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).GetTrack(ctx, req.(*GetTrackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrackService_GetTracks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTracksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).GetTracks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_GetTracks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).GetTracks(ctx, req.(*GetTracksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrackService_ServiceDesc is the grpc.ServiceDesc for TrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +296,14 @@ var TrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FailProcessing",
 			Handler:    _TrackService_FailProcessing_Handler,
+		},
+		{
+			MethodName: "GetTrack",
+			Handler:    _TrackService_GetTrack_Handler,
+		},
+		{
+			MethodName: "GetTracks",
+			Handler:    _TrackService_GetTracks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

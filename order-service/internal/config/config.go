@@ -14,6 +14,12 @@ type Config struct {
 	Postgres PostgresConfig
 	RabbitMQ RabbitMQConfig
 	Relay    RelayConfig
+	Catalog  CatalogConfig
+}
+
+type CatalogConfig struct {
+	URL     string        `env:"CATALOG_SERVICE_URL" env-default:"localhost:50052"`
+	Timeout time.Duration `env:"CATALOG_SERVICE_TIMEOUT" env-default:"5s"`
 }
 
 type GRPCConfig struct {
