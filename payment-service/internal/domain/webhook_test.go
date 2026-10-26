@@ -102,7 +102,6 @@ func TestWebhookEvent_Transitions(t *testing.T) {
 		t.Errorf("processed_at should be set")
 	}
 
-	// Double execution guard
 	if err := ev.MarkProcessed(); !errors.Is(err, domain.ErrWebhookAlreadyProcessed) {
 		t.Errorf("expected ErrWebhookAlreadyProcessed, got %v", err)
 	}
