@@ -1,6 +1,8 @@
 package payment
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +18,20 @@ type CreatePaymentSessionInput struct {
 	IdempotencyKey string
 }
 
+func (input *CreatePaymentSessionInput) Validate() error {
+	if input.OrderID == uuid.Nil {
+		return fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
+	}
+	if input.PayerUserID == uuid.Nil {
+		return fmt.Errorf("%w: payer user id is required", domain.ErrInvalidInput)
+	}
+	if strings.TrimSpace(input.IdempotencyKey) == "" {
+		return domain.ErrIdempotencyKeyRequired
+	}
+
+	return nil
+}
+
 type PaymentSessionOutput struct {
 	PaymentID    uuid.UUID
 	OrderID      uuid.UUID
@@ -27,6 +43,20 @@ type PaymentSessionOutput struct {
 	Amount       int64
 	Currency     domain.Currency
 	ExpiresAt    *time.Time
+}
+
+func toPaymentSessionOutput(p *domain.Payment, redirectURL string) *PaymentSessionOutput {
+	return &PaymentSessionOutput{
+		PaymentID:    p.ID,
+		OrderID:      p.OrderID,
+		Status:       p.Status,
+		Provider:     p.Provider,
+		ExternalID:   p.ExternalID,
+		ClientSecret: p.ClientSecret,
+		RedirectURL:  redirectURL,
+		Amount:       p.Amount,
+		Currency:     p.Currency,
+	}
 }
 
 type HandleWebhookInput struct {
@@ -49,4 +79,22 @@ type PaymentOutput struct {
 	IdempotencyKey string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+}
+
+func toPaymentOutput(p *domain.Payment) *PaymentOutput {
+	return &PaymentOutput{
+		ID:             p.ID,
+		OrderID:        p.OrderID,
+		PayerUserID:    p.PayerUserID,
+		Amount:         p.Amount,
+		Currency:       p.Currency,
+		Status:         p.Status,
+		Provider:       p.Provider,
+		ExternalID:     p.ExternalID,
+		ClientSecret:   p.ClientSecret,
+		FailureReason:  p.FailureReason,
+		IdempotencyKey: p.IdempotencyKey,
+		CreatedAt:      p.CreatedAt,
+		UpdatedAt:      p.UpdatedAt,
+	}
 }

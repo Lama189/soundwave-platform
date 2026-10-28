@@ -16,7 +16,6 @@ type PaymentGateway interface {
 
 type OrderClient interface {
 	GetOrder(ctx context.Context, req grpcclient.GetOrderRequest) (*grpcclient.OrderResponse, error)
-	PayOrder(ctx context.Context, req grpcclient.PayOrderRequest) (*grpcclient.OrderResponse, error)
 }
 
 type PaymentService interface {
