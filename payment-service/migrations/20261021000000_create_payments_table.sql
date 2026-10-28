@@ -40,10 +40,23 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_created_at ON webhook_events(created_at DESC);
 
+CREATE TABLE IF NOT EXISTS outbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aggregate_type VARCHAR(64) NOT NULL,
+    aggregate_id UUID NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_outbox_unprocessed ON outbox_events(created_at ASC) WHERE processed_at IS NULL;
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE IF EXISTS outbox_events;
 DROP TABLE IF EXISTS webhook_events;
 DROP TABLE IF EXISTS payments;
 -- +goose StatementEnd

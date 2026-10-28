@@ -13,8 +13,6 @@ import (
 	"github.com/Lama189/soundwave-platform/payment-service/internal/domain"
 )
 
-var _ domain.PaymentGateway = (*Adapter)(nil)
-
 type Adapter struct {
 	webhookSecret string
 }

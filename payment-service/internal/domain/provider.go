@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -10,12 +9,6 @@ import (
 	"github.com/Lama189/soundwave-platform/pkg/money"
 	"github.com/google/uuid"
 )
-
-type PaymentGateway interface {
-	Provider() PaymentProvider
-	CreateSession(ctx context.Context, params SessionParams) (*PaymentSession, error)
-	ParseAndVerifyWebhook(ctx context.Context, payload []byte, signature string) (*NormalizedWebhookEvent, error)
-}
 
 type SessionParams struct {
 	PaymentID      uuid.UUID

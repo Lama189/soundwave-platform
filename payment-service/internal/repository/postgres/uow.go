@@ -13,6 +13,7 @@ type pgxUnitOfWork struct {
 	tx            pgx.Tx
 	payments      uow.PaymentRepository
 	webhookEvents uow.WebhookEventRepository
+	outbox        uow.OutboxRepository
 }
 
 func newPgxUnitOfWork(tx pgx.Tx) *pgxUnitOfWork {
@@ -31,6 +32,13 @@ func (u *pgxUnitOfWork) WebhookEvents() uow.WebhookEventRepository {
 		u.webhookEvents = NewWebhookEventRepository(u.tx)
 	}
 	return u.webhookEvents
+}
+
+func (u *pgxUnitOfWork) Outbox() uow.OutboxRepository {
+	if u.outbox == nil {
+		u.outbox = NewOutboxRepository(u.tx)
+	}
+	return u.outbox
 }
 
 type UnitOfWorkManager struct {

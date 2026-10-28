@@ -10,10 +10,15 @@ import (
 type UnitOfWork interface {
 	Payments() PaymentRepository
 	WebhookEvents() WebhookEventRepository
+	Outbox() OutboxRepository
 }
 
 type Manager interface {
 	Do(ctx context.Context, fn func(uow UnitOfWork) error) error
+}
+
+type OutboxRepository interface {
+	Record(ctx context.Context, event *domain.Event) error
 }
 
 type PaymentRepository interface {
