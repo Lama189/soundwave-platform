@@ -46,6 +46,7 @@ var (
 
 // External service integration errors
 var (
-	ErrOrderNotFound    = fmt.Errorf("%w: order not found", ErrNotFound)
-	ErrOrderAlreadyPaid = fmt.Errorf("%w: order is already marked as paid", ErrConflict)
+	ErrOrderNotFound      = fmt.Errorf("%w: order not found", ErrNotFound)
+	ErrOrderAlreadyPaid   = fmt.Errorf("%w: order is already marked as paid", ErrConflict)
+	ErrOrderCommunication = errors.New("order service communication failure")
 )
