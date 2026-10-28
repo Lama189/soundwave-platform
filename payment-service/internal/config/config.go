@@ -2,8 +2,19 @@ package config
 
 import "time"
 
+type HTTPConfig struct {
+	Port         string        `env:"HTTP_PORT" env-default:":8080"`
+	ReadTimeout  time.Duration `env:"HTTP_READ_TIMEOUT" env-default:"5s"`
+	WriteTimeout time.Duration `env:"HTTP_WRITE_TIMEOUT" env-default:"10s"`
+	IdleTimeout  time.Duration `env:"HTTP_IDLE_TIMEOUT" env-default:"60s"`
+}
+
 type MockAdapterConfig struct {
 	WebhookSecret string
+}
+
+type WebhookConfig struct {
+	MaxWebhookBodySize int64 `env:"WEBHOOK_MAX_BODY_SIZE" env-default:"1048576"`
 }
 
 type RelayConfig struct {
