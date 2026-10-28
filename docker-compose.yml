@@ -136,6 +136,34 @@ services:
     networks:
       - backend-network
 
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    ports:
+      - "50055:50055"
+      - "8085:8085"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${PAYMENT_DB_NAME:-payment_db}?sslmode=disable
+      - GRPC_PORT=:50055
+      - HTTP_PORT=:8085
+      - WEBHOOK_MAX_BODY_SIZE=1048576
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      - ORDER_SERVICE_URL=order-service:50054
+      - ORDER_SERVICE_TIMEOUT=5s
+      - MOCK_WEBHOOK_SECRET=test_mock_secret
+      - OUTBOX_RELAY_POLL_INTERVAL=1s
+      - OUTBOX_RELAY_BATCH_SIZE=50
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+    networks:
+      - backend-network
+
   api-gateway:
     build:
       context: .
