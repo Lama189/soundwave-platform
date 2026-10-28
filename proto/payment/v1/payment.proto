@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package payment.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Lama189/soundwave-platform/gen/go/payment/v1;paymentpb";
+
+service PaymentService {
+  rpc CreatePaymentSession(CreatePaymentSessionRequest) returns (CreatePaymentSessionResponse);
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  rpc GetPaymentByOrder(GetPaymentByOrderRequest) returns (GetPaymentByOrderResponse);
+}
+
+message PaymentSession {
+  string payment_id = 1;
+  string order_id = 2;
+  string status = 3;
+  string provider = 4;
+  string external_id = 5;
+  string client_secret = 6;
+  string redirect_url = 7;
+  int64 amount = 8;
+  string currency = 9;
+  optional google.protobuf.Timestamp expires_at = 10;
+}
+
+message Payment {
+  string id = 1;
+  string order_id = 2;
+  string payer_user_id = 3;
+  int64 amount = 4;
+  string currency = 5;
+  string status = 6;
+  string provider = 7;
+  string external_id = 8;
+  string client_secret = 9;
+  optional string failure_reason = 10;
+  string idempotency_key = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message CreatePaymentSessionRequest {
+  string order_id = 1;
+  string payer_user_id = 2;
+  string provider = 3;
+  string customer_email = 4;
+  string idempotency_key = 5;
+}
+
+message CreatePaymentSessionResponse {
+  PaymentSession session = 1;
+}
+
+message GetPaymentRequest {
+  string payment_id = 1;
+}
+
+message GetPaymentResponse {
+  Payment payment = 1;
+}
+
+message GetPaymentByOrderRequest {
+  string order_id = 1;
+}
+
+message GetPaymentByOrderResponse {
+  Payment payment = 1;
+}
