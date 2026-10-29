@@ -15,6 +15,7 @@ type Config struct {
 	Postgres PostgresConfig
 	Redis    RedisConfig
 	FX       FXConfig
+	Billing  BillingConfig
 }
 
 type GRPCConfig struct {
@@ -35,6 +36,10 @@ type RedisConfig struct {
 
 type FXConfig struct {
 	DefaultCurrency domain.Currency `env:"FX_DEFAULT_CURRENCY" env-default:"USD"`
+}
+
+type BillingConfig struct {
+	PlatformFeePercent int `env:"PLATFORM_FEE_PERCENT" env-default:"15"`
 }
 
 func Load() (*Config, error) {

@@ -16,7 +16,7 @@ type UnitOfWork interface {
 }
 
 type Manager interface {
-	Do(ctx context.Context, fn func(uow UnitOfWork) error) error
+	Do(ctx context.Context, fn func(work UnitOfWork) error) error
 }
 
 type WalletRepository interface {

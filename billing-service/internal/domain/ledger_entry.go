@@ -11,6 +11,7 @@ type LedgerOperationType string
 
 const (
 	LedgerOpTrackSale     LedgerOperationType = "track_sale"
+	LedgerOpAlbumSale     LedgerOperationType = "album_sale"
 	LedgerOpPlatformFee   LedgerOperationType = "platform_fee"
 	LedgerOpPayoutLock    LedgerOperationType = "payout_lock"
 	LedgerOpPayoutSuccess LedgerOperationType = "payout_success"
@@ -19,7 +20,7 @@ const (
 
 func (t LedgerOperationType) IsValid() bool {
 	switch t {
-	case LedgerOpTrackSale, LedgerOpPlatformFee, LedgerOpPayoutLock, LedgerOpPayoutSuccess, LedgerOpPayoutRefund:
+	case LedgerOpTrackSale, LedgerOpAlbumSale, LedgerOpPlatformFee, LedgerOpPayoutLock, LedgerOpPayoutSuccess, LedgerOpPayoutRefund:
 		return true
 	default:
 		return false
@@ -117,7 +118,7 @@ func (t LedgerOperationType) IsDebit() bool {
 
 func (t LedgerOperationType) IsCredit() bool {
 	switch t {
-	case LedgerOpTrackSale, LedgerOpPayoutRefund:
+	case LedgerOpTrackSale, LedgerOpAlbumSale, LedgerOpPayoutRefund:
 		return true
 	default:
 		return false
@@ -157,7 +158,7 @@ func (e *LedgerEntry) Validate() error {
 	}
 
 	switch e.OperationType {
-	case LedgerOpTrackSale, LedgerOpPlatformFee:
+	case LedgerOpTrackSale, LedgerOpAlbumSale, LedgerOpPlatformFee:
 		if e.ReferenceType != ReferenceTypeOrder {
 			return fmt.Errorf("%w: operation %s requires reference type %s, got %s",
 				ErrInvalidInput, e.OperationType, ReferenceTypeOrder, e.ReferenceType)

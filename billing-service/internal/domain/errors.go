@@ -26,11 +26,11 @@ var (
 
 // Wallet errors
 var (
-	ErrWalletNotFound           = fmt.Errorf("%w: wallet not found", ErrNotFound)
-	ErrWalletAlreadyExists       = fmt.Errorf("%w: wallet already exists for artist", ErrAlreadyExists)
-	ErrInsufficientFunds        = fmt.Errorf("%w: insufficient available funds on wallet balance", ErrInvalidInput)
-	ErrInsufficientLockedFunds  = fmt.Errorf("%w: insufficient funds on locked balance", ErrInvalidInput)
-	ErrNotWalletOwner           = fmt.Errorf("%w: you are not the owner of this wallet", ErrForbidden)
+	ErrWalletNotFound          = fmt.Errorf("%w: wallet not found", ErrNotFound)
+	ErrWalletAlreadyExists     = fmt.Errorf("%w: wallet already exists for artist", ErrAlreadyExists)
+	ErrInsufficientFunds       = fmt.Errorf("%w: insufficient available funds on wallet balance", ErrInvalidInput)
+	ErrInsufficientLockedFunds = fmt.Errorf("%w: insufficient funds on locked balance", ErrInvalidInput)
+	ErrNotWalletOwner          = fmt.Errorf("%w: you are not the owner of this wallet", ErrForbidden)
 )
 
 // Payout errors
@@ -47,6 +47,11 @@ var (
 	ErrPaymentFailed        = fmt.Errorf("%w: payment processing failed", ErrConflict)
 	ErrPaymentRejected      = fmt.Errorf("%w: payment was rejected by provider", ErrConflict)
 	ErrInvalidPaymentMethod = fmt.Errorf("%w: invalid payment method", ErrInvalidInput)
+)
+
+// Order errors
+var (
+	ErrOrderAlreadyProcessed = errors.New("order has already been processed")
 )
 
 // Inbox and idempotency errors
