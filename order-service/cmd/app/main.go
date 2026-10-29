@@ -11,6 +11,7 @@ import (
 
 	orderpb "github.com/Lama189/soundwave-platform/gen/go/order/v1"
 	"github.com/Lama189/soundwave-platform/order-service/internal/config"
+	deliveryAmqp "github.com/Lama189/soundwave-platform/order-service/internal/delivery/amqp"
 	deliveryGrpc "github.com/Lama189/soundwave-platform/order-service/internal/delivery/grpc"
 	"github.com/Lama189/soundwave-platform/order-service/internal/grpcclient"
 	"github.com/Lama189/soundwave-platform/order-service/internal/repository/postgres"
@@ -68,6 +69,11 @@ func main() {
 	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)
 	if err := outboxRelay.Start(ctx); err != nil {
 		log.Fatalf("failed to start outbox relay: %v", err)
+	}
+
+	paymentConsumer := deliveryAmqp.NewPaymentConsumer(amqpConn, orderService, logger)
+	if err := paymentConsumer.Start(ctx); err != nil {
+		log.Fatalf("failed to start payment consumer: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
