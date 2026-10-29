@@ -24,17 +24,6 @@ var (
 	ErrZeroAmount          = money.ErrZeroAmount
 )
 
-// Order errors
-var (
-	ErrOrderNotFound          = fmt.Errorf("%w: order not found", ErrNotFound)
-	ErrOrderAlreadyPaid       = fmt.Errorf("%w: order is already paid", ErrConflict)
-	ErrOrderNotPending        = fmt.Errorf("%w: order is not in pending state", ErrConflict)
-	ErrOrderCancelled         = fmt.Errorf("%w: order has been cancelled", ErrConflict)
-	ErrEmptyOrderItems        = fmt.Errorf("%w: order must contain at least one item", ErrInvalidInput)
-	ErrNotOrderBuyer          = fmt.Errorf("%w: you are not the buyer of this order", ErrForbidden)
-	ErrTrackAlreadyPurchased  = fmt.Errorf("%w: track has already been purchased", ErrAlreadyExists)
-)
-
 // Wallet errors
 var (
 	ErrWalletNotFound           = fmt.Errorf("%w: wallet not found", ErrNotFound)
@@ -58,4 +47,9 @@ var (
 	ErrPaymentFailed        = fmt.Errorf("%w: payment processing failed", ErrConflict)
 	ErrPaymentRejected      = fmt.Errorf("%w: payment was rejected by provider", ErrConflict)
 	ErrInvalidPaymentMethod = fmt.Errorf("%w: invalid payment method", ErrInvalidInput)
+)
+
+// Inbox and idempotency errors
+var (
+	ErrEventAlreadyProcessed = fmt.Errorf("%w: event already processed", ErrConflict)
 )

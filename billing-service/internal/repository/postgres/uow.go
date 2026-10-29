@@ -10,23 +10,16 @@ import (
 )
 
 type pgxUnitOfWork struct {
-	tx      pgx.Tx
-	orders  uow.OrderRepository
-	wallets uow.WalletRepository
-	ledger  uow.LedgerRepository
-	payouts uow.PayoutRepository
-	outbox  uow.OutboxRepository
+	tx              pgx.Tx
+	wallets         uow.WalletRepository
+	ledger          uow.LedgerRepository
+	payouts         uow.PayoutRepository
+	outbox          uow.OutboxRepository
+	processedEvents uow.ProcessedEventsRepository
 }
 
 func newPgxUnitOfWork(tx pgx.Tx) *pgxUnitOfWork {
 	return &pgxUnitOfWork{tx: tx}
-}
-
-func (u *pgxUnitOfWork) Orders() uow.OrderRepository {
-	if u.orders == nil {
-		u.orders = NewOrderRepository(u.tx)
-	}
-	return u.orders
 }
 
 func (u *pgxUnitOfWork) Wallets() uow.WalletRepository {
@@ -55,6 +48,13 @@ func (u *pgxUnitOfWork) Outbox() uow.OutboxRepository {
 		u.outbox = NewOutboxRepository(u.tx)
 	}
 	return u.outbox
+}
+
+func (u *pgxUnitOfWork) ProcessedEvents() uow.ProcessedEventsRepository {
+	if u.processedEvents == nil {
+		u.processedEvents = NewProcessedEventsRepository(u.tx)
+	}
+	return u.processedEvents
 }
 
 type UnitOfWorkManager struct {

@@ -12,13 +12,11 @@ type AggregateType string
 type EventType string
 
 const (
-	AggregateTypeOrder  AggregateType = "order"
 	AggregateTypePayout AggregateType = "payout"
 	AggregateTypeWallet AggregateType = "wallet"
 )
 
 const (
-	EventTypeOrderPaid        EventType = "order.paid"
 	EventTypePayoutRequested  EventType = "payout.requested"
 	EventTypePayoutCompleted  EventType = "payout.completed"
 	EventTypePayoutFailed     EventType = "payout.failed"
@@ -26,7 +24,7 @@ const (
 
 func (t AggregateType) IsValid() bool {
 	switch t {
-	case AggregateTypeOrder, AggregateTypePayout, AggregateTypeWallet:
+	case AggregateTypePayout, AggregateTypeWallet:
 		return true
 	default:
 		return false
@@ -35,7 +33,7 @@ func (t AggregateType) IsValid() bool {
 
 func (t EventType) IsValid() bool {
 	switch t {
-	case EventTypeOrderPaid, EventTypePayoutRequested, EventTypePayoutCompleted, EventTypePayoutFailed:
+	case EventTypePayoutRequested, EventTypePayoutCompleted, EventTypePayoutFailed:
 		return true
 	default:
 		return false

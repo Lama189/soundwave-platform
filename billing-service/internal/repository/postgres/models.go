@@ -7,61 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type orderModel struct {
-	ID            uuid.UUID  `db:"id"`
-	BuyerUserID   uuid.UUID  `db:"buyer_user_id"`
-	Status        string     `db:"status"`
-	TotalAmount   int64      `db:"total_amount"`
-	Currency      string     `db:"currency"`
-	PaymentID     *uuid.UUID `db:"payment_id"`
-	FailureReason *string    `db:"failure_reason"`
-	CreatedAt     time.Time  `db:"created_at"`
-	UpdatedAt     time.Time  `db:"updated_at"`
-}
-
-func (m *orderModel) toDomain(items []domain.OrderItem) *domain.Order {
-	return domain.RestoreOrder(
-		m.ID,
-		m.BuyerUserID,
-		domain.OrderStatus(m.Status),
-		items,
-		domain.Money{
-			Amount:   m.TotalAmount,
-			Currency: domain.Currency(m.Currency),
-		},
-		m.PaymentID,
-		m.FailureReason,
-		m.CreatedAt,
-		m.UpdatedAt,
-	)
-}
-
-type orderItemModel struct {
-	ID          uuid.UUID `db:"id"`
-	OrderID     uuid.UUID `db:"order_id"`
-	ItemType    string    `db:"item_type"`
-	ItemID      uuid.UUID `db:"item_id"`
-	ArtistID    uuid.UUID `db:"artist_id"`
-	Price       int64     `db:"price"`
-	PlatformFee int64     `db:"platform_fee"`
-	ArtistShare int64     `db:"artist_share"`
-	Currency    string    `db:"currency"`
-}
-
-func (m *orderItemModel) toDomain() domain.OrderItem {
-	currency := domain.Currency(m.Currency)
-	return domain.RestoreOrderItem(
-		m.ID,
-		m.OrderID,
-		domain.ItemType(m.ItemType),
-		m.ItemID,
-		m.ArtistID,
-		domain.Money{Amount: m.Price, Currency: currency},
-		domain.Money{Amount: m.PlatformFee, Currency: currency},
-		domain.Money{Amount: m.ArtistShare, Currency: currency},
-	)
-}
-
 type walletModel struct {
 	ID            uuid.UUID `db:"id"`
 	ArtistID      uuid.UUID `db:"artist_id"`
@@ -159,6 +104,20 @@ func (m *eventModel) toDomain() *domain.Event {
 		domain.EventType(m.EventType),
 		m.Payload,
 		m.CreatedAt,
+		m.ProcessedAt,
+	)
+}
+
+type processedEventModel struct {
+	EventID     uuid.UUID `db:"event_id"`
+	EventType   string    `db:"event_type"`
+	ProcessedAt time.Time `db:"processed_at"`
+}
+
+func (m *processedEventModel) toDomain() *domain.ProcessedEvent {
+	return domain.RestoreProcessedEvent(
+		m.EventID,
+		domain.InboxEventType(m.EventType),
 		m.ProcessedAt,
 	)
 }

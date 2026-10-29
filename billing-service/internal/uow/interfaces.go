@@ -8,22 +8,15 @@ import (
 )
 
 type UnitOfWork interface {
-	Orders() OrderRepository
 	Wallets() WalletRepository
 	Ledger() LedgerRepository
 	Payouts() PayoutRepository
 	Outbox() OutboxRepository
+	ProcessedEvents() ProcessedEventsRepository
 }
 
 type Manager interface {
 	Do(ctx context.Context, fn func(uow UnitOfWork) error) error
-}
-
-type OrderRepository interface {
-	Create(ctx context.Context, order *domain.Order) error
-	GetByID(ctx context.Context, id uuid.UUID) (*domain.Order, error)
-	GetByBuyerID(ctx context.Context, buyerID uuid.UUID, limit, offset int) ([]*domain.Order, error)
-	Update(ctx context.Context, order *domain.Order) error
 }
 
 type WalletRepository interface {
@@ -47,4 +40,10 @@ type PayoutRepository interface {
 
 type OutboxRepository interface {
 	Record(ctx context.Context, event *domain.Event) error
+}
+
+type ProcessedEventsRepository interface {
+	IsProcessed(ctx context.Context, eventID uuid.UUID) (bool, error)
+	MarkProcessed(ctx context.Context, event *domain.ProcessedEvent) error
+	GetByID(ctx context.Context, eventID uuid.UUID) (*domain.ProcessedEvent, error)
 }
