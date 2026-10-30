@@ -165,6 +165,10 @@ type EventModel struct {
 	Payload       []byte
 	CreatedAt     time.Time
 	ProcessedAt   *time.Time
+	LockedUntil   *time.Time
+	LockedBy      *string
+	RetryCount    int
+	LastError     *string
 }
 
 func (m *EventModel) toDomain() *domain.Event {

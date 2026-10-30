@@ -64,6 +64,10 @@ type eventModel struct {
 	Payload       []byte     `db:"payload"`
 	CreatedAt     time.Time  `db:"created_at"`
 	ProcessedAt   *time.Time `db:"processed_at"`
+	LockedUntil   *time.Time `db:"locked_until"`
+	LockedBy      *string    `db:"locked_by"`
+	RetryCount    int        `db:"retry_count"`
+	LastError     *string    `db:"last_error"`
 }
 
 func (m *eventModel) toDomain() *domain.Event {

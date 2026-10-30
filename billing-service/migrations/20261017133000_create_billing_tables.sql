@@ -56,10 +56,15 @@ CREATE TABLE IF NOT EXISTS outbox_events (
     event_type VARCHAR(64) NOT NULL,
     payload JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    processed_at TIMESTAMPTZ
+    processed_at TIMESTAMPTZ,
+    locked_until TIMESTAMPTZ,
+    locked_by VARCHAR(64),
+    retry_count INT NOT NULL DEFAULT 0,
+    last_error TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_billing_outbox_unprocessed ON outbox_events(created_at ASC) WHERE processed_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_billing_outbox_unprocessed ON outbox_events(created_at ASC) INCLUDE (locked_until) WHERE processed_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_billing_outbox_processed ON outbox_events(processed_at ASC) WHERE processed_at IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS processed_events (
     event_id UUID PRIMARY KEY,

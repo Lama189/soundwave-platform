@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/Lama189/soundwave-platform/payment-service/internal/config"
@@ -20,6 +21,7 @@ type OutboxRelay struct {
 	outboxRepo OutboxRepository
 	logger     *slog.Logger
 	cfg        config.RelayConfig
+	workerID   string
 }
 
 func NewOutboxRelay(conn *amqp.Connection, outboxRepo OutboxRepository, logger *slog.Logger, cfg config.RelayConfig) *OutboxRelay {
@@ -29,12 +31,27 @@ func NewOutboxRelay(conn *amqp.Connection, outboxRepo OutboxRepository, logger *
 	if cfg.BatchSize <= 0 {
 		cfg.BatchSize = 50
 	}
+	if cfg.LockDuration <= 0 {
+		cfg.LockDuration = 30 * time.Second
+	}
+	if cfg.MaxRetries <= 0 {
+		cfg.MaxRetries = 5
+	}
+	if cfg.RetentionDays <= 0 {
+		cfg.RetentionDays = 7
+	}
+
+	workerID, err := os.Hostname()
+	if err != nil || workerID == "" {
+		workerID = uuid.New().String()
+	}
 
 	return &OutboxRelay{
 		conn:       conn,
 		outboxRepo: outboxRepo,
 		logger:     logger,
 		cfg:        cfg,
+		workerID:   workerID,
 	}
 }
 
@@ -51,8 +68,12 @@ func (r *OutboxRelay) Start(ctx context.Context) error {
 	}
 
 	r.logger.Info("started payment outbox relay worker",
+		slog.String("worker_id", r.workerID),
 		slog.Duration("interval", r.cfg.PollInterval),
 		slog.Int("batch_size", r.cfg.BatchSize),
+		slog.Duration("lock_duration", r.cfg.LockDuration),
+		slog.Int("max_retries", r.cfg.MaxRetries),
+		slog.Int("retention_days", r.cfg.RetentionDays),
 	)
 
 	go func() {
@@ -80,13 +101,33 @@ func (r *OutboxRelay) Start(ctx context.Context) error {
 		}
 	}()
 
+	go func() {
+		cleanupTicker := time.NewTicker(1 * time.Hour)
+		defer cleanupTicker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-cleanupTicker.C:
+				retention := time.Duration(r.cfg.RetentionDays) * 24 * time.Hour
+				deleted, err := r.outboxRepo.CleanupProcessed(ctx, retention)
+				if err != nil {
+					r.logger.Error("failed to cleanup processed outbox events", slog.String("error", err.Error()))
+				} else if deleted > 0 {
+					r.logger.Info("cleaned up old processed outbox events", slog.Int64("deleted_count", deleted))
+				}
+			}
+		}
+	}()
+
 	return nil
 }
 
 func (r *OutboxRelay) processBatch(ctx context.Context, ch *amqp.Channel) {
-	events, err := r.outboxRepo.FetchUnprocessed(ctx, r.cfg.BatchSize)
+	events, err := r.outboxRepo.ClaimUnprocessed(ctx, r.cfg.BatchSize, r.cfg.LockDuration, r.workerID)
 	if err != nil {
-		r.logger.Error("failed to fetch unprocessed payment outbox events", slog.String("error", err.Error()))
+		r.logger.Error("failed to claim unprocessed payment outbox events", slog.String("error", err.Error()))
 		return
 	}
 
@@ -115,6 +156,14 @@ func (r *OutboxRelay) processBatch(ctx context.Context, ch *amqp.Channel) {
 				slog.String("event_type", routingKey),
 				slog.String("error", err.Error()),
 			)
+
+			nextRetry := time.Now().UTC().Add(10 * time.Second)
+			if recErr := r.outboxRepo.RecordFailure(ctx, event.ID, err.Error(), nextRetry, r.cfg.MaxRetries); recErr != nil {
+				r.logger.Error("failed to record outbox event failure",
+					slog.String("event_id", event.ID.String()),
+					slog.String("error", recErr.Error()),
+				)
+			}
 			break
 		}
 
