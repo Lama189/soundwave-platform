@@ -10,3 +10,9 @@ type PaymentSucceededEvent struct {
 	Currency    string    `json:"currency"`
 	ExternalID  string    `json:"external_id"`
 }
+
+type PaymentFailedEvent struct {
+	PaymentID     uuid.UUID `json:"payment_id"`
+	OrderID       uuid.UUID `json:"order_id"`
+	FailureReason string    `json:"failure_reason"`
+}

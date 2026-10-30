@@ -191,6 +191,66 @@ func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderO
 	return toOrderOutputDTO(updatedOrder), nil
 }
 
+func (s *OrderService) FailOrder(ctx context.Context, input FailOrderDTO) (*OrderOutputDTO, error) {
+	if input.OrderID == uuid.Nil {
+		return nil, fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
+	}
+	if input.PaymentID == uuid.Nil {
+		return nil, fmt.Errorf("%w: payment id is required", domain.ErrInvalidInput)
+	}
+
+	var failedOrder *domain.Order
+	err := s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, input.OrderID)
+		if err != nil {
+			return fmt.Errorf("get order %s for fail: %w", input.OrderID, err)
+		}
+
+		if order.Status == domain.OrderStatusFailed {
+			failedOrder = order
+			return nil
+		}
+
+		if err := order.MarkFailed(input.PaymentID, input.FailureReason); err != nil {
+			return err
+		}
+
+		if err := work.Orders().Update(ctx, order); err != nil {
+			return fmt.Errorf("updated failed order: %w", err)
+		}
+
+		payload := OrderFailedEventPayload{
+			OrderID:       order.ID,
+			BuyerUserID:   order.BuyerUserID,
+			PaymentID:     input.PaymentID,
+			FailureReason: input.FailureReason,
+			FailedAt:      time.Now().UTC(),
+		}
+
+		outboxEvent, err := domain.NewEvent(
+			domain.AggregateTypeOrder,
+			order.ID,
+			domain.EventTypeOrderFailed,
+			payload,
+		)
+		if err != nil {
+			return fmt.Errorf("build outbox event: %w", err)
+		}
+
+		if err := work.Outbox().Record(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("record outbox event: %w", err)
+		}
+
+		failedOrder = order
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fail order transaction: %w", err)
+	}
+
+	return toOrderOutputDTO(failedOrder), nil
+}
+
 func (s *OrderService) GetOrder(ctx context.Context, input GetOrderDTO) (*OrderOutputDTO, error) {
 	if input.OrderID == uuid.Nil {
 		return nil, fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)

@@ -98,27 +98,28 @@ func (o *Order) MarkPaid(paymentID uuid.UUID) error {
 	if paymentID == uuid.Nil {
 		return fmt.Errorf("%w: payment id is required", ErrInvalidInput)
 	}
-
 	if o.Status == OrderStatusPaid {
 		return ErrOrderAlreadyPaid
 	}
-	if o.Status != OrderStatusPendingPayment {
-		return fmt.Errorf("%w: cannot pay order with status %q", ErrOrderNotPending, o.Status)
+	if err := o.ensureCanTransition(OrderStatusPaid); err != nil {
+		return err
 	}
 
 	o.Status = OrderStatusPaid
 	o.PaymentID = &paymentID
 	o.UpdatedAt = time.Now().UTC()
-
 	return nil
 }
 
-func (o *Order) MarkFailed(reason string) error {
-	if o.Status != OrderStatusPendingPayment {
-		return fmt.Errorf("%w: cannot fail order with status %q", ErrOrderNotPending, o.Status)
+func (o *Order) MarkFailed(paymentID uuid.UUID, reason string) error {
+	if err := o.ensureCanTransition(OrderStatusFailed); err != nil {
+		return err
 	}
 
 	o.Status = OrderStatusFailed
+	if paymentID != uuid.Nil {
+		o.PaymentID = &paymentID
+	}
 	if reason != "" {
 		o.FailureReason = &reason
 	}
@@ -128,19 +129,63 @@ func (o *Order) MarkFailed(reason string) error {
 }
 
 func (o *Order) Cancel() error {
-	if o.Status == OrderStatusPaid {
-		return fmt.Errorf("%w: cannot cancel already paid order", ErrConflict)
-	}
 	if o.Status == OrderStatusCancelled {
 		return nil
 	}
-	if o.Status != OrderStatusPendingPayment {
-		return fmt.Errorf("%w: cannot cancel order with status %q", ErrConflict, o.Status)
+	if err := o.ensureCanTransition(OrderStatusCancelled); err != nil {
+		return err
 	}
 
 	o.Status = OrderStatusCancelled
 	o.UpdatedAt = time.Now().UTC()
+	return nil
+}
 
+func (o *Order) IsTerminal() bool {
+	if o == nil {
+		return false
+	}
+
+	switch o.Status {
+	case OrderStatusFailed, OrderStatusCancelled, OrderStatusRefunded:
+		return true
+	default:
+		return false
+	}
+}
+
+func (o *Order) CanTransitionTo(next OrderStatus) bool {
+	if o == nil {
+		return false
+	}
+	if o.Status == next {
+		return false
+	}
+
+	switch o.Status {
+	case OrderStatusPendingPayment:
+		switch next {
+		case OrderStatusPaid, OrderStatusFailed, OrderStatusCancelled:
+			return true
+		}
+
+	case OrderStatusPaid:
+		return next == OrderStatusRefunded
+	}
+
+	return false
+}
+
+func (o *Order) ensureCanTransition(next OrderStatus) error {
+	if o == nil {
+		return ErrNotFound
+	}
+	if o.IsTerminal() {
+		return fmt.Errorf("%w: order is in terminal state %q", ErrConflict, o.Status)
+	}
+	if !o.CanTransitionTo(next) {
+		return fmt.Errorf("%w: cannot transition order from %q to %q", ErrConflict, o.Status, next)
+	}
 	return nil
 }
 

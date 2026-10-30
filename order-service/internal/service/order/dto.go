@@ -33,6 +33,12 @@ type PayOrderDTO struct {
 	PaymentID uuid.UUID
 }
 
+type FailOrderDTO struct {
+	OrderID       uuid.UUID
+	PaymentID     uuid.UUID
+	FailureReason string
+}
+
 type CancelOrderDTO struct {
 	OrderID     uuid.UUID
 	BuyerUserID uuid.UUID
@@ -81,6 +87,14 @@ type OrderPaidEventPayload struct {
 	PaymentID   uuid.UUID                   `json:"payment_id"`
 	PaidAt      time.Time                   `json:"paid_at"`
 	Items       []OrderPaidItemEventPayload `json:"items"`
+}
+
+type OrderFailedEventPayload struct {
+	OrderID       uuid.UUID `json:"order_id"`
+	BuyerUserID   uuid.UUID `json:"buyer_user_id"`
+	PaymentID     uuid.UUID `json:"payment_id"`
+	FailureReason string    `json:"failure_reason"`
+	FailedAt      time.Time `json:"failed_at"`
 }
 
 func toOrderOutputDTO(o *domain.Order) *OrderOutputDTO {

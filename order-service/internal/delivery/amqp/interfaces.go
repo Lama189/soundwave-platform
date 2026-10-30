@@ -8,4 +8,5 @@ import (
 
 type OrderService interface {
 	PayOrder(ctx context.Context, input order.PayOrderDTO) (*order.OrderOutputDTO, error)
+	FailOrder(ctx context.Context, input order.FailOrderDTO) (*order.OrderOutputDTO, error)
 }
