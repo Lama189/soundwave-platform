@@ -145,7 +145,7 @@ func (c *TrackProcessedConsumer) handleTrackProcessed(ctx context.Context, msg a
 			slog.String("track_id", event.TrackID.String()),
 			slog.String("error", err.Error()),
 		)
-		
+
 		_ = msg.Nack(false, true)
 		return
 	}

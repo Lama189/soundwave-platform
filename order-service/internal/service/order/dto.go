@@ -39,13 +39,13 @@ type CancelOrderDTO struct {
 }
 
 type OrderItemOutputDTO struct {
-	ID       uuid.UUID        `json:"id"`
-	OrderID  uuid.UUID        `json:"order_id"`
-	ItemType domain.ItemType  `json:"item_type"`
-	ItemID   uuid.UUID        `json:"item_id"`
-	ArtistID uuid.UUID        `json:"artist_id"`
-	Price    int64            `json:"price"`
-	Currency domain.Currency  `json:"currency"`
+	ID       uuid.UUID       `json:"id"`
+	OrderID  uuid.UUID       `json:"order_id"`
+	ItemType domain.ItemType `json:"item_type"`
+	ItemID   uuid.UUID       `json:"item_id"`
+	ArtistID uuid.UUID       `json:"artist_id"`
+	Price    int64           `json:"price"`
+	Currency domain.Currency `json:"currency"`
 }
 
 type OrderOutputDTO struct {
@@ -66,11 +66,11 @@ type ListOrdersOutputDTO struct {
 }
 
 type OrderPaidItemEventPayload struct {
-	ItemID   uuid.UUID        `json:"item_id"`
-	ItemType domain.ItemType  `json:"item_type"`
-	ArtistID uuid.UUID        `json:"artist_id"`
-	Price    int64            `json:"price"`
-	Currency domain.Currency  `json:"currency"`
+	ItemID   uuid.UUID       `json:"item_id"`
+	ItemType domain.ItemType `json:"item_type"`
+	ArtistID uuid.UUID       `json:"artist_id"`
+	Price    int64           `json:"price"`
+	Currency domain.Currency `json:"currency"`
 }
 
 type OrderPaidEventPayload struct {

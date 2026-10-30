@@ -7,8 +7,8 @@ from audio_worker.service.interfaces import (
 from audio_worker.service.processor import AudioProcessor
   
 __all__ = [
-    "AudioProcessor",
     "AudioProber",
+    "AudioProcessor",
     "EventPublisher",
     "MediaTranscoder",
     "StorageClient",

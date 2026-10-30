@@ -42,7 +42,7 @@ class MinioStorageClient:
                 if not exists:
                     await asyncio.to_thread(self._client.make_bucket, bucket)
                     logger.info("MinIO bucket created: %s", bucket)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed to check/create bucket %s: %s", bucket, exc)
 
     async def download_raw_audio(self, raw_key: str, dest_path: Path) -> Path:

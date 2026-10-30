@@ -121,4 +121,3 @@ func (m *processedEventModel) toDomain() *domain.ProcessedEvent {
 		m.ProcessedAt,
 	)
 }
-

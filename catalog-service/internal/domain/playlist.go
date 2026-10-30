@@ -73,7 +73,6 @@ func (p *Playlist) Update(title, description string, isPrivate bool) error {
 	return p.Validate()
 }
 
-
 type PlaylistTrack struct {
 	PlaylistID uuid.UUID
 	TrackID    uuid.UUID

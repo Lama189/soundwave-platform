@@ -17,9 +17,9 @@ import (
 )
 
 type mockAcknowledger struct {
-	acked    bool
-	nacked   bool
-	requeue  bool
+	acked       bool
+	nacked      bool
+	requeue     bool
 	deliveryTag uint64
 }
 
@@ -82,11 +82,11 @@ func TestOrderPaidConsumer_HandleMessage(t *testing.T) {
 	validBody, _ := json.Marshal(validEvent)
 
 	tests := []struct {
-		name         string
-		body         []byte
-		serviceFn    func(ctx context.Context, input settlement.ProcessPaidOrderInput) error
-		expectAck    bool
-		expectNack   bool
+		name          string
+		body          []byte
+		serviceFn     func(ctx context.Context, input settlement.ProcessPaidOrderInput) error
+		expectAck     bool
+		expectNack    bool
 		expectRequeue bool
 	}{
 		{
@@ -114,8 +114,8 @@ func TestOrderPaidConsumer_HandleMessage(t *testing.T) {
 			expectNack: false,
 		},
 		{
-			name: "invalid json (poison pill)",
-			body: []byte("invalid-json{"),
+			name:       "invalid json (poison pill)",
+			body:       []byte("invalid-json{"),
 			expectAck:  true,
 			expectNack: false,
 		},

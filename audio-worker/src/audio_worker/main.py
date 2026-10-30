@@ -1,15 +1,15 @@
-import asyncio                                                                                                                    
-import logging                                                                                                                    
-import signal                                                                                                                     
-import sys                                                                                                                        
-                                                                                                                                      
-import aio_pika                                                                                                                   
-                                                                                                                                      
-from audio_worker.config import settings                                                                                          
+import asyncio
+import logging
+import signal
+import sys
+
+import aio_pika
+
+from audio_worker.config import settings
 from audio_worker.infrastructure.broker.consumer import AudioWorkerConsumer
 from audio_worker.infrastructure.broker.publisher import RabbitMQEventPublisher
-from audio_worker.infrastructure.media import AudioProbe, FFmpegTranscoder                                                        
-from audio_worker.infrastructure.storage import MinioStorageClient                                                                
+from audio_worker.infrastructure.media import AudioProbe, FFmpegTranscoder
+from audio_worker.infrastructure.storage import MinioStorageClient
 from audio_worker.service import AudioProcessor
 
 

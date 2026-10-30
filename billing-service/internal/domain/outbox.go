@@ -17,9 +17,9 @@ const (
 )
 
 const (
-	EventTypePayoutRequested  EventType = "payout.requested"
-	EventTypePayoutCompleted  EventType = "payout.completed"
-	EventTypePayoutFailed     EventType = "payout.failed"
+	EventTypePayoutRequested EventType = "payout.requested"
+	EventTypePayoutCompleted EventType = "payout.completed"
+	EventTypePayoutFailed    EventType = "payout.failed"
 )
 
 func (t AggregateType) IsValid() bool {

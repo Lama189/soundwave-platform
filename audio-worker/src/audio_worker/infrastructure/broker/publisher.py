@@ -1,10 +1,11 @@
 import json
 import logging
+
 from aio_pika import DeliveryMode, Message
 from aio_pika.abc import AbstractChannel, AbstractExchange
 
 from audio_worker.config import settings
-from audio_worker.domain.models import ProcessingResult, ProcessingFailure
+from audio_worker.domain.models import ProcessingFailure, ProcessingResult
 
 logger = logging.getLogger(__name__)
 

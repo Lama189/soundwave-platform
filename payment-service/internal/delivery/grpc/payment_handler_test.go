@@ -16,9 +16,9 @@ import (
 )
 
 type mockPaymentService struct {
-	createSessionFn  func(ctx context.Context, input payment.CreatePaymentSessionInput) (*payment.PaymentSessionOutput, error)
-	getByIDFn        func(ctx context.Context, paymentID uuid.UUID) (*payment.PaymentOutput, error)
-	getByOrderIDFn    func(ctx context.Context, orderID uuid.UUID) (*payment.PaymentOutput, error)
+	createSessionFn func(ctx context.Context, input payment.CreatePaymentSessionInput) (*payment.PaymentSessionOutput, error)
+	getByIDFn       func(ctx context.Context, paymentID uuid.UUID) (*payment.PaymentOutput, error)
+	getByOrderIDFn  func(ctx context.Context, orderID uuid.UUID) (*payment.PaymentOutput, error)
 }
 
 func (m *mockPaymentService) CreatePaymentSession(ctx context.Context, input payment.CreatePaymentSessionInput) (*payment.PaymentSessionOutput, error) {

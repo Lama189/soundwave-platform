@@ -29,14 +29,14 @@ type PlaylistOutputDTO struct {
 }
 
 type PlaylistTrackItemDTO struct {
-	TrackID    uuid.UUID
-	Position   int
-	AddedAt    time.Time
-	Title      string
-	ArtistID   uuid.UUID
-	Duration   time.Duration
-	CoverKey   string
-	Status     string
+	TrackID  uuid.UUID
+	Position int
+	AddedAt  time.Time
+	Title    string
+	ArtistID uuid.UUID
+	Duration time.Duration
+	CoverKey string
+	Status   string
 }
 
 type PlaylistWithTracksDTO struct {

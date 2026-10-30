@@ -2,7 +2,6 @@ import json
 import logging
 from uuid import UUID
 
-import aio_pika
 from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractIncomingMessage
 
 from audio_worker.config import settings
@@ -58,7 +57,7 @@ class AudioWorkerConsumer:
                 artist_id=artist_id,
                 raw_key=raw_key,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Failed to parse message JSON: %s, body: %s", exc, message.body)
             await message.ack()
             return
@@ -82,8 +81,8 @@ class AudioWorkerConsumer:
             logger.error("[%s] Domain error while processing track: %s", track_id, exc)
             await message.nack(requeue=True)
 
-        except Exception as exc:
-            logger.exception("[%s] Unexpected system error: %s", track_id, exc)
+        except Exception:
+            logger.exception("[%s] Unexpected system error", track_id)
             await message.nack(requeue=True)
 
     async def close(self) -> None:
