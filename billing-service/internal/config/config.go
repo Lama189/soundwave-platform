@@ -14,6 +14,7 @@ type Config struct {
 	GRPC     GRPCConfig
 	Postgres PostgresConfig
 	Redis    RedisConfig
+	RabbitMQ RabbitMQConfig
 	FX       FXConfig
 	Billing  BillingConfig
 }
@@ -32,6 +33,10 @@ type RedisConfig struct {
 	Password string        `env:"REDIS_PASSWORD" env-default:""`
 	DB       int           `env:"REDIS_DB" env-default:"1"`
 	FXTTL    time.Duration `env:"REDIS_FX_TTL" env-default:"1h"`
+}
+
+type RabbitMQConfig struct {
+	URL string `env:"RABBITMQ_URL" env-default:"amqp://guest:guest@localhost:5672"`
 }
 
 type FXConfig struct {
