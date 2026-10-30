@@ -47,9 +47,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "stable"
           cache: true
-          cache-dependency-path: "**/go.sum"
+          cache-dependency-path: "**/*.sum"
 
       - name: Verify Code Formatting (gofmt)
         run: |
@@ -62,15 +62,27 @@ jobs:
 
       - name: Go Vet
         run: |
-          go vet ./api-geteway/... ./user-service/... ./catalog-service/... ./order-service/... ./payment-service/... ./billing-service/... ./pkg/...
+          for mod in api-geteway user-service catalog-service order-service payment-service billing-service pkg; do
+            echo "==> Running go vet for $mod"
+            (cd "$mod" && go vet ./...)
+          done
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Go Security Vulnerability Audit (govulncheck)
         run: |
-          go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+          for mod in api-geteway user-service catalog-service order-service payment-service billing-service pkg; do
+            echo "==> Auditing $mod"
+            (cd "$mod" && govulncheck ./...)
+          done
 
       - name: Run Go Unit Tests
         run: |
-          go test -v -race -cover ./api-geteway/... ./user-service/... ./catalog-service/... ./order-service/... ./payment-service/... ./billing-service/... ./pkg/...
+          for mod in api-geteway user-service catalog-service order-service payment-service billing-service pkg; do
+            echo "==> Testing $mod"
+            (cd "$mod" && go test -v -race -cover ./...)
+          done
 
   python-ci:
     name: Audio Worker Lint & Security

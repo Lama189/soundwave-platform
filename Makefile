@@ -1,6 +1,6 @@
 .PHONY: help check fmt vet test proto-lint proto-gen py-lint docker-up docker-down
 
-GO_MODULES := ./api-geteway/... ./user-service/... ./catalog-service/... ./order-service/... ./payment-service/... ./billing-service/... ./pkg/...
+GO_SERVICES := api-geteway user-service catalog-service order-service payment-service billing-service pkg
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -10,12 +10,12 @@ fmt: ## Format Go source code
 	@gofmt -w .
 
 vet: ## Run Go static analysis (go vet)
-	@echo "==> Running go vet..."
-	@go vet $(GO_MODULES)
+	@echo "==> Running go vet across all services..."
+	@for mod in $(GO_SERVICES); do (cd $$mod && go vet ./...) || exit 1; done
 
 test: ## Run all unit tests with race detection
-	@echo "==> Running Go unit tests..."
-	@go test -race $(GO_MODULES)
+	@echo "==> Running Go unit tests across all services..."
+	@for mod in $(GO_SERVICES); do (cd $$mod && go test -race ./...) || exit 1; done
 
 proto-lint: ## Lint Protobuf schemas
 	@echo "==> Linting Protobuf schemas..."

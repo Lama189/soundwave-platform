@@ -1,0 +1,12 @@
+go 1.26.5
+
+use (
+	./api-geteway
+	./billing-service
+	./catalog-service
+	./gen/go
+	./order-service
+	./payment-service
+	./pkg
+	./user-service
+)

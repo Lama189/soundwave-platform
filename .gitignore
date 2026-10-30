@@ -34,9 +34,6 @@ coverage.out
 # Delve debugger
 __debug_bin*
 
-# Go workspace file
-go.work
-go.work.sum
 
 # Go vendor (if not intentionally tracked)
 # vendor/
