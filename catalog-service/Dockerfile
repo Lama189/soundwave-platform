@@ -5,6 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates git
 
 COPY gen/go ./gen/go
+COPY pkg ./pkg
 COPY catalog-service ./catalog-service
 
 WORKDIR /app/catalog-service
