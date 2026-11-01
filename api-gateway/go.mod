@@ -4,6 +4,7 @@ go 1.26.5
 
 require (
 	github.com/Lama189/soundwave-platform/gen/go v0.0.0-00010101000000-000000000000
+	github.com/Lama189/soundwave-platform/pkg v0.0.0-00010101000000-000000000000
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
@@ -26,4 +27,7 @@ require (
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )
 
-replace github.com/Lama189/soundwave-platform/gen/go => ../gen/go
+replace (
+	github.com/Lama189/soundwave-platform/gen/go => ../gen/go
+	github.com/Lama189/soundwave-platform/pkg => ../pkg
+)

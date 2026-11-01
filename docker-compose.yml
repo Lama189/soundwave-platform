@@ -202,9 +202,12 @@ services:
       - USER_SERVICE_TIMEOUT=5s
       - CATALOG_SERVICE_GRPC_ADDR=catalog-service:50052
       - CATALOG_SERVICE_TIMEOUT=5s
+      - ORDER_SERVICE_GRPC_ADDR=order-service:50054
+      - ORDER_SERVICE_TIMEOUT=5s
     depends_on:
       - user-service
       - catalog-service
+      - order-service
     networks:
       - backend-network
 

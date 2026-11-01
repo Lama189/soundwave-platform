@@ -12,6 +12,7 @@ require (
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/shopspring/decimal v1.5.0
 	golang.org/x/sync v0.24.0
+	google.golang.org/grpc v1.84.0
 )
 
 require (
@@ -31,7 +32,6 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261005182115-fad411399dd8 // indirect
-	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect

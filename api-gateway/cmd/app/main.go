@@ -16,6 +16,7 @@ import (
 	"github.com/Lama189/soundwave-platform/api-gateway/internal/infrastructure/jwt"
 	"github.com/Lama189/soundwave-platform/api-gateway/internal/infrastructure/logger"
 	artistUsecase "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/artist"
+	orderUsecase "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/order"
 	trackUsecase "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/track"
 )
 
@@ -56,15 +57,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	orderConn, err := clientMgr.GetConn(initCtx, cfg.Services.Order.Addr)
+	if err != nil {
+		log.Error(
+			"failed to connect to order-service",
+			slog.String("addr", cfg.Services.Order.Addr),
+			slog.String("error", err.Error()),
+		)
+		os.Exit(1)
+	}
+
 	userSvcClient := grpcclient.NewUserClient(userConn, cfg.Services.User.Timeout)
 	catalogSvcClient := grpcclient.NewArtistClient(catalogConn, cfg.Services.Catalog.Timeout)
 	trackSvcClient := grpcclient.NewTrackClient(catalogConn, cfg.Services.Catalog.Timeout)
+	orderSvcClient := grpcclient.NewOrderClient(orderConn, cfg.Services.Order.Timeout)
 
 	becomeArtistUseCase := artistUsecase.NewBecomeArtistUseCase(catalogSvcClient, userSvcClient, log)
 	uploadTrackUseCase := trackUsecase.NewUploadTrackUseCase(trackSvcClient, log)
 	confirmUploadUseCase := trackUsecase.NewConfirmUploadUseCase(trackSvcClient, log)
 	completeProcessingUseCase := trackUsecase.NewCompleteProcessingUseCase(trackSvcClient, log)
 	failProcessingUseCase := trackUsecase.NewFailProcessingUseCase(trackSvcClient, log)
+	createOrderUseCase := orderUsecase.NewCreateOrderUseCase(orderSvcClient, log)
 
 	userHandler := deliveryHttp.NewUserHandler(userSvcClient)
 	artistHandler := deliveryHttp.NewArtistHandler(catalogSvcClient, becomeArtistUseCase)
@@ -74,8 +87,9 @@ func main() {
 		completeProcessingUseCase,
 		failProcessingUseCase,
 	)
+	orderHandler := deliveryHttp.NewOrderHandler(createOrderUseCase)
 
-	router := deliveryHttp.NewRouter(userHandler, artistHandler, trackHandler, jwtValidator)
+	router := deliveryHttp.NewRouter(userHandler, artistHandler, trackHandler, orderHandler, jwtValidator)
 
 	srv := &http.Server{
 		Addr:         cfg.HTTP.Port,

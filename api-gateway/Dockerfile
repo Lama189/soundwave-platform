@@ -5,6 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates git
 
 COPY gen/go ./gen/go
+COPY pkg ./pkg
 COPY api-gateway ./api-gateway
 
 WORKDIR /app/api-gateway

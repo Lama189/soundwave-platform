@@ -3,6 +3,8 @@ package grpcclient
 import (
 	"time"
 
+	orderpb "github.com/Lama189/soundwave-platform/gen/go/order/v1"
+	"github.com/Lama189/soundwave-platform/pkg/money"
 	"github.com/google/uuid"
 )
 
@@ -105,3 +107,86 @@ type FailProcessingRequest struct {
 }
 
 type FailProcessingResponse struct{}
+
+type CreateOrderItemRequest struct {
+	ItemType string
+	ItemID   uuid.UUID
+}
+
+type CreateOrderRequest struct {
+	BuyerUserID uuid.UUID
+	Items       []CreateOrderItemRequest
+}
+
+type OrderItemResponse struct {
+	ID       uuid.UUID      `json:"id"`
+	ItemType string         `json:"item_type"`
+	ItemID   uuid.UUID      `json:"item_id"`
+	ArtistID uuid.UUID      `json:"artist_id"`
+	Price    int64          `json:"price"`
+	Currency money.Currency `json:"currency"`
+}
+
+type OrderResponse struct {
+	ID            uuid.UUID           `json:"id"`
+	BuyerUserID   uuid.UUID           `json:"buyer_user_id"`
+	Status        string              `json:"status"`
+	TotalAmount   int64               `json:"total_amount"`
+	Currency      money.Currency      `json:"currency"`
+	PaymentID     *uuid.UUID          `json:"payment_id,omitempty"`
+	FailureReason *string             `json:"failure_reason,omitempty"`
+	Items         []OrderItemResponse `json:"items"`
+	CreatedAt     time.Time           `json:"created_at"`
+	UpdatedAt     time.Time           `json:"updated_at"`
+}
+
+func toOrderResponse(pb *orderpb.Order) *OrderResponse {
+	orderID, _ := uuid.Parse(pb.GetId())
+	buyerID, _ := uuid.Parse(pb.GetBuyerUserId())
+
+	var paymentID *uuid.UUID
+	if pb.PaymentId != nil && *pb.PaymentId != "" {
+		if parsed, err := uuid.Parse(*pb.PaymentId); err == nil {
+			paymentID = &parsed
+		}
+	}
+
+	var createdAt time.Time
+	if pb.GetCreatedAt() != nil {
+		createdAt = pb.GetCreatedAt().AsTime()
+	}
+
+	var updatedAt time.Time
+	if pb.GetUpdatedAt() != nil {
+		updatedAt = pb.GetUpdatedAt().AsTime()
+	}
+
+	items := make([]OrderItemResponse, len(pb.GetItems()))
+	for i, it := range pb.GetItems() {
+		itID, _ := uuid.Parse(it.GetId())
+		itemID, _ := uuid.Parse(it.GetItemId())
+		artistID, _ := uuid.Parse(it.GetArtistId())
+
+		items[i] = OrderItemResponse{
+			ID:       itID,
+			ItemType: it.GetItemType(),
+			ItemID:   itemID,
+			ArtistID: artistID,
+			Price:    it.GetPrice(),
+			Currency: money.Currency(it.GetCurrency()),
+		}
+	}
+
+	return &OrderResponse{
+		ID:            orderID,
+		BuyerUserID:   buyerID,
+		Status:        pb.GetStatus(),
+		TotalAmount:   pb.GetTotalAmount(),
+		Currency:      money.Currency(pb.GetCurrency()),
+		PaymentID:     paymentID,
+		FailureReason: pb.FailureReason,
+		Items:         items,
+		CreatedAt:     createdAt,
+		UpdatedAt:     updatedAt,
+	}
+}

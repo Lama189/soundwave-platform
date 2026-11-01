@@ -12,6 +12,7 @@ func NewRouter(
 	userHandler *UserHandler,
 	artistHandler *ArtistHandler,
 	trackHandler *TrackHandler,
+	orderHandler *OrderHandler,
 	tokenValidator jwt.TokenValidator,
 ) *chi.Mux {
 	r := chi.NewRouter()
@@ -56,6 +57,11 @@ func NewRouter(
 
 			r.Post("/{id}/complete", trackHandler.CompleteProcessing)
 			r.Post("/{id}/fail", trackHandler.FailProcessing)
+		})
+
+		r.Route("/orders", func(r chi.Router) {
+			r.Use(AuthMiddleware(tokenValidator))
+			r.Post("/", orderHandler.CreateOrder)
 		})
 	})
 
