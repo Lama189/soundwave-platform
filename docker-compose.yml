@@ -164,10 +164,35 @@ services:
     networks:
       - backend-network
 
+  billing-service:
+    build:
+      context: .
+      dockerfile: billing-service/Dockerfile
+    ports:
+      - "50053:50053"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${BILLING_DB_NAME:-billing_db}?sslmode=disable
+      - GRPC_PORT=:50053
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=1
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+      - FX_DEFAULT_CURRENCY=${FX_DEFAULT_CURRENCY:-USD}
+      - PLATFORM_FEE_PERCENT=15
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend-network
+
   api-gateway:
     build:
       context: .
-      dockerfile: api-geteway/Dockerfile
+      dockerfile: api-gateway/Dockerfile
     ports:
       - "8080:8080"
     environment:

@@ -3,7 +3,7 @@ package track
 import (
 	"context"
 
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/grpcclient"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/grpcclient"
 )
 
 type CatalogTrackClient interface {

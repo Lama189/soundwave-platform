@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	usecaseTrack "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/track"
+	usecaseTrack "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/track"
 )
 
 type TrackHandler struct {

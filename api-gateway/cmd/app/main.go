@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/config"
-	deliveryHttp "github.com/Lama189/soundwave-platform/api-geteway/internal/delivery/http"
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/grpcclient"
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/infrastructure/jwt"
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/infrastructure/logger"
-	artistUsecase "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/artist"
-	trackUsecase "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/track"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/config"
+	deliveryHttp "github.com/Lama189/soundwave-platform/api-gateway/internal/delivery/http"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/grpcclient"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/infrastructure/jwt"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/infrastructure/logger"
+	artistUsecase "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/artist"
+	trackUsecase "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/track"
 )
 
 func main() {

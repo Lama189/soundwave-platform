@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/infrastructure/jwt"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/infrastructure/jwt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

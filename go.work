@@ -1,7 +1,7 @@
 go 1.26.5
 
 use (
-	./api-geteway
+	./api-gateway
 	./billing-service
 	./catalog-service
 	./gen/go

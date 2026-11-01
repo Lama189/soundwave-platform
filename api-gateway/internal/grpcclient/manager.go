@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/Lama189/soundwave-platform/api-geteway/pkg/contextutil"
+	"github.com/Lama189/soundwave-platform/api-gateway/pkg/contextutil"
 )
 
 type Config struct {

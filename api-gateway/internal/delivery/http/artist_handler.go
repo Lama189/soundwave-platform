@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	usecaseArtist "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/artist"
+	usecaseArtist "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/artist"
 )
 
 type ArtistHandler struct {

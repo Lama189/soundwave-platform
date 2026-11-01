@@ -5,9 +5,9 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates git
 
 COPY gen/go ./gen/go
-COPY api-geteway ./api-geteway
+COPY api-gateway ./api-gateway
 
-WORKDIR /app/api-geteway
+WORKDIR /app/api-gateway
 RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build \

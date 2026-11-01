@@ -1,6 +1,6 @@
 .PHONY: help check fmt vet test proto-lint proto-gen py-lint docker-up docker-down
 
-GO_SERVICES := api-geteway user-service catalog-service order-service payment-service billing-service pkg
+GO_SERVICES := api-gateway user-service catalog-service order-service payment-service billing-service pkg
 
 help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

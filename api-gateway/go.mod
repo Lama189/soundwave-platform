@@ -1,4 +1,4 @@
-module github.com/Lama189/soundwave-platform/api-geteway
+module github.com/Lama189/soundwave-platform/api-gateway
 
 go 1.26.5
 

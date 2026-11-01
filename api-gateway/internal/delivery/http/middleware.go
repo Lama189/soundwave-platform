@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/infrastructure/jwt"
-	"github.com/Lama189/soundwave-platform/api-geteway/pkg/contextutil"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/infrastructure/jwt"
+	"github.com/Lama189/soundwave-platform/api-gateway/pkg/contextutil"
 	"github.com/google/uuid"
 )
 

@@ -3,9 +3,9 @@ package http
 import (
 	"context"
 
-	"github.com/Lama189/soundwave-platform/api-geteway/internal/grpcclient"
-	usecaseArtist "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/artist"
-	usecaseTrack "github.com/Lama189/soundwave-platform/api-geteway/internal/usecase/track"
+	"github.com/Lama189/soundwave-platform/api-gateway/internal/grpcclient"
+	usecaseArtist "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/artist"
+	usecaseTrack "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/track"
 	"github.com/google/uuid"
 )
 

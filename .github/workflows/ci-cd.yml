@@ -62,7 +62,7 @@ jobs:
 
       - name: Go Vet
         run: |
-          for mod in api-geteway user-service catalog-service order-service payment-service billing-service pkg; do
+          for mod in api-gateway user-service catalog-service order-service payment-service billing-service pkg; do
             echo "==> Running go vet for $mod"
             (cd "$mod" && go vet ./...)
           done
@@ -72,14 +72,14 @@ jobs:
 
       - name: Go Security Vulnerability Audit (govulncheck)
         run: |
-          for mod in api-geteway user-service catalog-service order-service payment-service billing-service pkg; do
+          for mod in api-gateway user-service catalog-service order-service payment-service billing-service pkg; do
             echo "==> Auditing $mod"
             (cd "$mod" && govulncheck ./...)
           done
 
       - name: Run Go Unit Tests
         run: |
-          for mod in api-geteway user-service catalog-service order-service payment-service billing-service pkg; do
+          for mod in api-gateway user-service catalog-service order-service payment-service billing-service pkg; do
             echo "==> Testing $mod"
             (cd "$mod" && go test -v -race -cover ./...)
           done
@@ -136,10 +136,14 @@ jobs:
             image: payment-service
             context: .
             dockerfile: payment-service/Dockerfile
+          - name: billing-service
+            image: billing-service
+            context: .
+            dockerfile: billing-service/Dockerfile
           - name: api-gateway
             image: api-gateway
             context: .
-            dockerfile: api-geteway/Dockerfile
+            dockerfile: api-gateway/Dockerfile
           - name: audio-worker
             image: audio-worker
             context: ./audio-worker
