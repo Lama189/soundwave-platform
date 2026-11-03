@@ -23,3 +23,7 @@ type TrackRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Track, error)
 	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Track, error)
 }
+
+type AccessChecker interface {
+	HasTrackAccess(ctx context.Context, userID *uuid.UUID, trackID uuid.UUID) (bool, error)
+}

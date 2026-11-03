@@ -64,9 +64,9 @@ func main() {
 	uowManager := postgres.NewUnitOfWorkManager(pgPool)
 
 	artistService := artist.NewService(artistRepo)
-	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage)
 	albumService := album.NewService(albumRepo, artistRepo)
 	userPurchaseService := user_purchase.NewService(uowManager, userPurchaseRepo, trackRepo, albumRepo, logger)
+	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage, userPurchaseService)
 
 	rawAudioConsumer := deliveryAmqp.NewRawAudioConsumer(amqpConn, trackService, logger)
 	if err := rawAudioConsumer.Start(ctx); err != nil {

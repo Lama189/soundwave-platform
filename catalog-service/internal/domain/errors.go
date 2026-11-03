@@ -33,6 +33,7 @@ var (
 var (
 	ErrTrackNotFound          = fmt.Errorf("%w: track not found", ErrNotFound)
 	ErrTrackNotReady          = fmt.Errorf("%w: track is not ready yet", ErrInvalidInput)
+	ErrTrackNotPurchased      = fmt.Errorf("%w: track is not purchased", ErrForbidden)
 	ErrInvalidAudioDuration   = fmt.Errorf("%w: duration must be positive", ErrInvalidInput)
 	ErrInvalidStateTransition = fmt.Errorf("%w: invalid state transition", ErrConflict)
 	ErrUnsupportedAudioFormat = fmt.Errorf("%w: unsupported audio format", ErrInvalidInput)

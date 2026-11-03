@@ -20,6 +20,7 @@ type Service struct {
 	artists ArtistRepository
 	albums  AlbumRepository
 	storage Storage
+	access  AccessChecker
 }
 
 func NewTrackService(
@@ -29,6 +30,7 @@ func NewTrackService(
 	artists ArtistRepository,
 	albums AlbumRepository,
 	storage Storage,
+	access AccessChecker,
 ) *Service {
 	return &Service{
 		uow:     uowManager,
@@ -37,6 +39,7 @@ func NewTrackService(
 		artists: artists,
 		albums:  albums,
 		storage: storage,
+		access:  access,
 	}
 }
 
@@ -51,6 +54,16 @@ func (s *Service) LikeTrack(ctx context.Context, userID, trackID uuid.UUID) erro
 
 	if t.Status != domain.TrackStatusReady {
 		return domain.ErrTrackNotReady
+	}
+
+	if s.access != nil {
+		hasAccess, err := s.access.HasTrackAccess(ctx, &userID, trackID)
+		if err != nil {
+			return fmt.Errorf("check track access for like: %w", err)
+		}
+		if !hasAccess {
+			return domain.ErrTrackNotPurchased
+		}
 	}
 
 	like, err := domain.NewTrackLike(userID, trackID)

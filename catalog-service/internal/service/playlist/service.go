@@ -12,12 +12,14 @@ import (
 type Service struct {
 	playlists PlaylistRepository
 	tracks    TrackRepository
+	access    AccessChecker
 }
 
-func NewService(playlists PlaylistRepository, tracks TrackRepository) *Service {
+func NewService(playlists PlaylistRepository, tracks TrackRepository, access AccessChecker) *Service {
 	return &Service{
 		playlists: playlists,
 		tracks:    tracks,
+		access:    access,
 	}
 }
 
@@ -132,6 +134,16 @@ func (s *Service) AddTrack(ctx context.Context, currentUserID, playlistID, track
 
 	if t.Status != domain.TrackStatusReady {
 		return domain.ErrTrackNotReady
+	}
+
+	if s.access != nil {
+		hasAccess, err := s.access.HasTrackAccess(ctx, &currentUserID, trackID)
+		if err != nil {
+			return fmt.Errorf("check track access for playlist: %w", err)
+		}
+		if !hasAccess {
+			return domain.ErrTrackNotPurchased
+		}
 	}
 
 	if err := s.playlists.AddTrack(ctx, playlistID, trackID, position); err != nil {

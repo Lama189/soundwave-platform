@@ -45,3 +45,7 @@ type Storage interface {
 	GenerateUploadURL(ctx context.Context, key string) (string, error)
 	ObjectExists(ctx context.Context, key string) (bool, error)
 }
+
+type AccessChecker interface {
+	HasTrackAccess(ctx context.Context, userID *uuid.UUID, trackID uuid.UUID) (bool, error)
+}

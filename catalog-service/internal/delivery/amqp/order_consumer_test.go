@@ -115,9 +115,9 @@ func TestOrderPaidConsumer_HandleMessage(t *testing.T) {
 			expectRequeue: true,
 		},
 		{
-			name:      "invalid json triggers ack to discard corrupt message",
-			body:      []byte("{invalid json"),
-			serviceFn: nil,
+			name:       "invalid json triggers ack to discard corrupt message",
+			body:       []byte("{invalid json"),
+			serviceFn:  nil,
 			expectAck:  true,
 			expectNack: false,
 		},
