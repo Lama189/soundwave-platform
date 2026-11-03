@@ -16,6 +16,7 @@ import (
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/album"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/artist"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/user_purchase"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/worker"
 	catalogpb "github.com/Lama189/soundwave-platform/gen/go/catalog/v1"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -58,12 +59,14 @@ func main() {
 	albumRepo := postgres.NewAlbumRepository(pgPool)
 	trackRepo := postgres.NewTrackRepository(pgPool)
 	trackLikeRepo := postgres.NewTrackLikeRepository(pgPool)
+	userPurchaseRepo := postgres.NewUserPurchaseRepository(pgPool)
 	outboxRepo := postgres.NewOutboxRepository(pgPool)
 	uowManager := postgres.NewUnitOfWorkManager(pgPool)
 
 	artistService := artist.NewService(artistRepo)
 	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage)
 	albumService := album.NewService(albumRepo, artistRepo)
+	userPurchaseService := user_purchase.NewService(uowManager, userPurchaseRepo, trackRepo, albumRepo, logger)
 
 	rawAudioConsumer := deliveryAmqp.NewRawAudioConsumer(amqpConn, trackService, logger)
 	if err := rawAudioConsumer.Start(ctx); err != nil {
@@ -73,6 +76,11 @@ func main() {
 	trackProcessedConsumer := deliveryAmqp.NewTrackProcessedConsumer(amqpConn, trackService, logger)
 	if err := trackProcessedConsumer.Start(ctx); err != nil {
 		log.Fatalf("failed to start track processed consumer: %v", err)
+	}
+
+	orderPaidConsumer := deliveryAmqp.NewOrderPaidConsumer(amqpConn, userPurchaseService, logger)
+	if err := orderPaidConsumer.Start(ctx); err != nil {
+		log.Fatalf("failed to start order paid consumer: %v", err)
 	}
 
 	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)

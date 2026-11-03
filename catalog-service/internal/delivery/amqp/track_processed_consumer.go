@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
-	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -18,19 +17,6 @@ const (
 	RoutingKeyTrackProcessed = "track.processed"
 	RoutingKeyTrackFailed    = "track.processing_failed"
 )
-
-type TrackProcessedEvent struct {
-	TrackID         uuid.UUID `json:"track_id"`
-	DurationSeconds int64     `json:"duration_seconds"`
-	FileKey         string    `json:"file_key"`
-	PreviewKey      string    `json:"preview_key"`
-	CoverKey        *string   `json:"cover_key"`
-}
-
-type TrackProcessingFailedEvent struct {
-	TrackID      uuid.UUID `json:"track_id"`
-	ErrorMessage string    `json:"error_message"`
-}
 
 type TrackProcessedConsumer struct {
 	conn         *amqp.Connection
