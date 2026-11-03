@@ -8,15 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
-// UnitOfWork предоставляет доступ к репозиториям в рамках одной транзакции.
 type UnitOfWork interface {
 	Tracks() TrackRepository
 	Outbox() OutboxRepository
 	Artists() ArtistRepository
 	Albums() AlbumRepository
+	Purchases() UserPurchaseRepository
 }
 
-// Manager управляет жизненным циклом транзакции (BEGIN / COMMIT / ROLLBACK).
 type Manager interface {
 	Do(ctx context.Context, fn func(uow UnitOfWork) error) error
 }
@@ -43,4 +42,14 @@ type ArtistRepository interface {
 
 type AlbumRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Album, error)
+}
+
+type UserPurchaseRepository interface {
+	Create(ctx context.Context, purchase *domain.UserPurchase) error
+	CreateBatch(ctx context.Context, purchases []*domain.UserPurchase) error
+	HasPurchasedTrack(ctx context.Context, userID, trackID uuid.UUID) (bool, error)
+	HasPurchasedAlbum(ctx context.Context, userID, albumID uuid.UUID) (bool, error)
+	GetPurchasedTrackIDsIn(ctx context.Context, userID uuid.UUID, trackIDs []uuid.UUID) (map[uuid.UUID]bool, error)
+	ListByUserID(ctx context.Context, userID uuid.UUID, itemType *domain.ItemType, limit, offset int) ([]*domain.UserPurchase, error)
+	ExistsByOrderID(ctx context.Context, orderID uuid.UUID) (bool, error)
 }

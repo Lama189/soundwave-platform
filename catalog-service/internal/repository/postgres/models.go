@@ -157,6 +157,28 @@ func (m *listeningHistoryModel) toDomain() *domain.ListeningHistory {
 	)
 }
 
+type userPurchaseModel struct {
+	ID        uuid.UUID  `db:"id"`
+	UserID    uuid.UUID  `db:"user_id"`
+	OrderID   uuid.UUID  `db:"order_id"`
+	ItemType  string     `db:"item_type"`
+	TrackID   *uuid.UUID `db:"track_id"`
+	AlbumID   *uuid.UUID `db:"album_id"`
+	CreatedAt time.Time  `db:"created_at"`
+}
+
+func (m *userPurchaseModel) toDomain() *domain.UserPurchase {
+	return domain.RestoreUserPurchase(
+		m.ID,
+		m.UserID,
+		m.OrderID,
+		domain.ItemType(m.ItemType),
+		m.TrackID,
+		m.AlbumID,
+		m.CreatedAt,
+	)
+}
+
 type EventModel struct {
 	ID            uuid.UUID
 	AggregateType string

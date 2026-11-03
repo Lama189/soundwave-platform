@@ -92,6 +92,35 @@ CREATE TABLE IF NOT EXISTS listening_history (
 CREATE INDEX IF NOT EXISTS idx_listening_history_user_time
     ON listening_history(user_id, listened_at DESC);
 
+CREATE TABLE IF NOT EXISTS user_purchases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    order_id UUID NOT NULL,
+    item_type VARCHAR(16) NOT NULL,
+    track_id UUID REFERENCES tracks(id) ON DELETE RESTRICT,
+    album_id UUID REFERENCES albums(id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_user_purchases_item_type CHECK (item_type IN ('track', 'album')),
+    CONSTRAINT chk_user_purchases_target CHECK (
+        (item_type = 'track' AND track_id IS NOT NULL AND album_id IS NULL) OR
+        (item_type = 'album' AND album_id IS NOT NULL AND track_id IS NULL)
+    )
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_purchases_user_track
+    ON user_purchases (user_id, track_id)
+    WHERE track_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_purchases_user_album
+    ON user_purchases (user_id, album_id)
+    WHERE album_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_user_purchases_user_id
+    ON user_purchases (user_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_user_purchases_order_id
+    ON user_purchases (order_id);
+
 CREATE TABLE IF NOT EXISTS outbox_events (
     id UUID PRIMARY KEY,
     aggregate_type VARCHAR(64) NOT NULL,
@@ -121,6 +150,7 @@ CREATE INDEX IF NOT EXISTS idx_outbox_processed
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS outbox_events;
+DROP TABLE IF EXISTS user_purchases;
 DROP TABLE IF EXISTS listening_history;
 DROP TABLE IF EXISTS track_likes;
 DROP TABLE IF EXISTS playlist_tracks;
