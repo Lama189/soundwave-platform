@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Lama189/soundwave-platform/api-gateway/internal/grpcclient"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/Lama189/soundwave-platform/pkg/money"
 	"github.com/google/uuid"
 )
@@ -13,7 +14,7 @@ import (
 var ErrInvalidInput = errors.New("invalid order input")
 
 type CreateOrderItemInput struct {
-	ItemType string
+	ItemType itemtype.ItemType
 	ItemID   uuid.UUID
 }
 
@@ -34,8 +35,8 @@ func (in CreateOrderInput) Validate() error {
 		if it.ItemID == uuid.Nil {
 			return fmt.Errorf("%w: item id cannot be empty", ErrInvalidInput)
 		}
-		if it.ItemType != "track" && it.ItemType != "album" {
-			return fmt.Errorf("%w: invalid item type", ErrInvalidInput)
+		if _, err := itemtype.Parse(string(it.ItemType)); err != nil {
+			return fmt.Errorf("%w: %v", ErrInvalidInput, err)
 		}
 	}
 
@@ -59,12 +60,12 @@ type CancelOrderInput struct {
 }
 
 type OrderItemOutput struct {
-	ID       uuid.UUID      `json:"id"`
-	ItemType string         `json:"item_type"`
-	ItemID   uuid.UUID      `json:"item_id"`
-	ArtistID uuid.UUID      `json:"artist_id"`
-	Price    int64          `json:"price"`
-	Currency money.Currency `json:"currency"`
+	ID       uuid.UUID         `json:"id"`
+	ItemType itemtype.ItemType `json:"item_type"`
+	ItemID   uuid.UUID         `json:"item_id"`
+	ArtistID uuid.UUID         `json:"artist_id"`
+	Price    int64             `json:"price"`
+	Currency money.Currency    `json:"currency"`
 }
 
 type OrderOutput struct {

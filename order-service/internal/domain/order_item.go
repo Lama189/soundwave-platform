@@ -3,36 +3,28 @@ package domain
 import (
 	"fmt"
 
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/google/uuid"
 )
 
-type ItemType string
+type ItemType = itemtype.ItemType
 
 const (
-	ItemTypeTrack ItemType = "track"
-	ItemTypeAlbum ItemType = "album"
+	ItemTypeTrack = itemtype.Track
+	ItemTypeAlbum = itemtype.Album
 )
-
-func (t ItemType) IsValid() bool {
-	switch t {
-	case ItemTypeTrack, ItemTypeAlbum:
-		return true
-	default:
-		return false
-	}
-}
 
 type OrderItem struct {
 	ID       uuid.UUID
 	OrderID  uuid.UUID
-	ItemType ItemType
+	ItemType itemtype.ItemType
 	ItemID   uuid.UUID
 	ArtistID uuid.UUID
 	Price    int64
 	Currency Currency
 }
 
-func NewOrderItem(orderID uuid.UUID, itemType ItemType, itemID, artistID uuid.UUID, price int64, currency Currency) (*OrderItem, error) {
+func NewOrderItem(orderID uuid.UUID, itemType itemtype.ItemType, itemID, artistID uuid.UUID, price int64, currency Currency) (*OrderItem, error) {
 	oi := &OrderItem{
 		ID:       uuid.New(),
 		OrderID:  orderID,
@@ -50,7 +42,7 @@ func NewOrderItem(orderID uuid.UUID, itemType ItemType, itemID, artistID uuid.UU
 	return oi, nil
 }
 
-func RestoreOrderItem(id, orderID uuid.UUID, itemType ItemType, itemID, artistID uuid.UUID, price int64, currency Currency) OrderItem {
+func RestoreOrderItem(id, orderID uuid.UUID, itemType itemtype.ItemType, itemID, artistID uuid.UUID, price int64, currency Currency) OrderItem {
 	return OrderItem{
 		ID:       id,
 		OrderID:  orderID,

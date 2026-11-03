@@ -7,6 +7,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/order-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/order-service/internal/uow"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/google/uuid"
 )
 
@@ -40,9 +41,9 @@ func (s *OrderService) CreateOrder(ctx context.Context, input CreateOrderDTO) (*
 			return nil, fmt.Errorf("%w: item [%d] id is nil", domain.ErrInvalidInput, i)
 		}
 		switch it.ItemType {
-		case domain.ItemTypeTrack:
+		case itemtype.Track:
 			trackIDs = append(trackIDs, it.ItemID)
-		case domain.ItemTypeAlbum:
+		case itemtype.Album:
 			albumIDs = append(albumIDs, it.ItemID)
 		default:
 			return nil, fmt.Errorf("%w: unsupported item type %q", domain.ErrInvalidInput, it.ItemType)

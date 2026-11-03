@@ -32,7 +32,7 @@ func (c *OrderClient) CreateOrder(ctx context.Context, req CreateOrderRequest) (
 	pbItems := make([]*orderpb.CreateOrderItem, len(req.Items))
 	for i, item := range req.Items {
 		pbItems[i] = &orderpb.CreateOrderItem{
-			ItemType: item.ItemType,
+			ItemType: string(item.ItemType),
 			ItemId:   item.ItemID.String(),
 		}
 	}

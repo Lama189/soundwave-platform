@@ -4,6 +4,7 @@ import (
 	"time"
 
 	orderpb "github.com/Lama189/soundwave-platform/gen/go/order/v1"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/Lama189/soundwave-platform/pkg/money"
 	"github.com/google/uuid"
 )
@@ -109,7 +110,7 @@ type FailProcessingRequest struct {
 type FailProcessingResponse struct{}
 
 type CreateOrderItemRequest struct {
-	ItemType string
+	ItemType itemtype.ItemType
 	ItemID   uuid.UUID
 }
 
@@ -119,12 +120,12 @@ type CreateOrderRequest struct {
 }
 
 type OrderItemResponse struct {
-	ID       uuid.UUID      `json:"id"`
-	ItemType string         `json:"item_type"`
-	ItemID   uuid.UUID      `json:"item_id"`
-	ArtistID uuid.UUID      `json:"artist_id"`
-	Price    int64          `json:"price"`
-	Currency money.Currency `json:"currency"`
+	ID       uuid.UUID         `json:"id"`
+	ItemType itemtype.ItemType `json:"item_type"`
+	ItemID   uuid.UUID         `json:"item_id"`
+	ArtistID uuid.UUID         `json:"artist_id"`
+	Price    int64             `json:"price"`
+	Currency money.Currency    `json:"currency"`
 }
 
 type OrderResponse struct {
@@ -169,7 +170,7 @@ func toOrderResponse(pb *orderpb.Order) *OrderResponse {
 
 		items[i] = OrderItemResponse{
 			ID:       itID,
-			ItemType: it.GetItemType(),
+			ItemType: itemtype.ItemType(it.GetItemType()),
 			ItemID:   itemID,
 			ArtistID: artistID,
 			Price:    it.GetPrice(),

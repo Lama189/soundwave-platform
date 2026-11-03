@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	orderpb "github.com/Lama189/soundwave-platform/gen/go/order/v1"
-	"github.com/Lama189/soundwave-platform/order-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/order-service/internal/service/order"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -180,9 +180,9 @@ func toCreateOrderItemDTOs(pbItems []*orderpb.CreateOrderItem) ([]order.CreateOr
 			return nil, status.Errorf(codes.InvalidArgument, "invalid order item [%d] id format: %v", i, err)
 		}
 
-		itemType := domain.ItemType(item.GetItemType())
-		if !itemType.IsValid() {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid order item [%d] type %q", i, item.GetItemType())
+		itemType, err := itemtype.Parse(item.GetItemType())
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid order item [%d] type %q: %v", i, item.GetItemType(), err)
 		}
 
 		items = append(items, order.CreateOrderItemDTO{

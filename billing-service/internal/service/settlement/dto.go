@@ -4,28 +4,13 @@ import (
 	"time"
 
 	"github.com/Lama189/soundwave-platform/billing-service/internal/domain"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/google/uuid"
 )
 
-type ItemType string
-
-const (
-	ItemTypeTrack ItemType = "track"
-	ItemTypeAlbum ItemType = "album"
-)
-
-func (t ItemType) IsValid() bool {
-	switch t {
-	case ItemTypeTrack, ItemTypeAlbum:
-		return true
-	default:
-		return false
-	}
-}
-
 type PaidOrderItemInput struct {
 	ItemID   uuid.UUID
-	ItemType ItemType
+	ItemType itemtype.ItemType
 	ArtistID uuid.UUID
 	Price    int64
 	Currency domain.Currency

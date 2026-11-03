@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/order"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/Lama189/soundwave-platform/pkg/money"
 	"github.com/google/uuid"
 )
@@ -68,7 +69,7 @@ func (r CreateOrderRequest) ToInput(buyerUserID uuid.UUID) order.CreateOrderInpu
 	items := make([]order.CreateOrderItemInput, len(r.Items))
 	for i, item := range r.Items {
 		items[i] = order.CreateOrderItemInput{
-			ItemType: item.ItemType,
+			ItemType: itemtype.ItemType(item.ItemType),
 			ItemID:   item.ItemID,
 		}
 	}
@@ -80,12 +81,12 @@ func (r CreateOrderRequest) ToInput(buyerUserID uuid.UUID) order.CreateOrderInpu
 }
 
 type OrderItemResponse struct {
-	ID       uuid.UUID      `json:"id"`
-	ItemType string         `json:"item_type"`
-	ItemID   uuid.UUID      `json:"item_id"`
-	ArtistID uuid.UUID      `json:"artist_id"`
-	Price    int64          `json:"price"`
-	Currency money.Currency `json:"currency"`
+	ID       uuid.UUID         `json:"id"`
+	ItemType itemtype.ItemType `json:"item_type"`
+	ItemID   uuid.UUID         `json:"item_id"`
+	ArtistID uuid.UUID         `json:"artist_id"`
+	Price    int64             `json:"price"`
+	Currency money.Currency    `json:"currency"`
 }
 
 type OrderResponse struct {

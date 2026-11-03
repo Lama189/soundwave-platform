@@ -9,6 +9,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/billing-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/billing-service/internal/uow"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 )
 
 type Service struct {
@@ -90,7 +91,7 @@ func (s *Service) ProcessPaidOrder(ctx context.Context, input ProcessPaidOrderIn
 			)
 
 			opType := domain.LedgerOpTrackSale
-			if item.ItemType == ItemTypeAlbum {
+			if item.ItemType == itemtype.Album {
 				opType = domain.LedgerOpAlbumSale
 			}
 

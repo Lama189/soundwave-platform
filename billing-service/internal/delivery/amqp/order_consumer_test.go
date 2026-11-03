@@ -14,6 +14,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/billing-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/billing-service/internal/service/settlement"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 )
 
 type mockAcknowledger struct {
@@ -96,7 +97,7 @@ func TestOrderPaidConsumer_HandleMessage(t *testing.T) {
 				if input.OrderID != orderID {
 					t.Errorf("expected order id %s, got %s", orderID, input.OrderID)
 				}
-				if len(input.Items) != 1 || input.Items[0].ItemType != settlement.ItemTypeTrack {
+				if len(input.Items) != 1 || input.Items[0].ItemType != itemtype.Track {
 					t.Errorf("unexpected items: %+v", input.Items)
 				}
 				return nil
@@ -200,7 +201,7 @@ func TestOrderPaidEvent_ToSettlementInput(t *testing.T) {
 	if len(input.Items) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(input.Items))
 	}
-	if input.Items[0].ItemType != settlement.ItemTypeAlbum {
-		t.Errorf("expected item type %s, got %s", settlement.ItemTypeAlbum, input.Items[0].ItemType)
+	if input.Items[0].ItemType != itemtype.Album {
+		t.Errorf("expected item type %s, got %s", itemtype.Album, input.Items[0].ItemType)
 	}
 }

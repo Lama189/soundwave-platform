@@ -7,6 +7,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/billing-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/billing-service/internal/service/settlement"
+	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 )
 
 type OrderPaidItemEvent struct {
@@ -32,7 +33,7 @@ func (e *OrderPaidEvent) toSettlementInput() settlement.ProcessPaidOrderInput {
 	for i, item := range e.Items {
 		items[i] = settlement.PaidOrderItemInput{
 			ItemID:   item.ItemID,
-			ItemType: settlement.ItemType(item.ItemType),
+			ItemType: itemtype.ItemType(item.ItemType),
 			ArtistID: item.ArtistID,
 			Price:    item.Price,
 			Currency: item.Currency,
