@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Lama189/soundwave-platform/api-gateway/internal/grpcclient"
+	"github.com/google/uuid"
 )
 
 type CatalogTrackClient interface {
@@ -12,4 +13,5 @@ type CatalogTrackClient interface {
 	CompleteProcessing(ctx context.Context, req grpcclient.CompleteProcessingRequest) (*grpcclient.TrackResponse, error)
 	FailProcessing(ctx context.Context, req grpcclient.FailProcessingRequest) (*grpcclient.FailProcessingResponse, error)
 	GetTrackStream(ctx context.Context, req grpcclient.GetTrackStreamRequest) (*grpcclient.TrackStreamResponse, error)
+	GetTrack(ctx context.Context, trackID uuid.UUID) (*grpcclient.TrackResponse, error)
 }

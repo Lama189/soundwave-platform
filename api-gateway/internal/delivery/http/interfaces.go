@@ -46,6 +46,18 @@ type GetTrackStreamUseCase interface {
 	Execute(ctx context.Context, input usecaseTrack.GetTrackStreamInput) (*usecaseTrack.GetTrackStreamOutput, error)
 }
 
+type GetTrackUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.GetTrackInput) (*grpcclient.TrackResponse, error)
+}
+
+type AlbumClient interface {
+	CreateAlbum(ctx context.Context, req grpcclient.CreateAlbumRequest) (*grpcclient.AlbumResponse, error)
+	GetAlbum(ctx context.Context, albumID uuid.UUID) (*grpcclient.AlbumResponse, error)
+	GetAlbumsByArtistID(ctx context.Context, artistID uuid.UUID, limit, offset int32) ([]*grpcclient.AlbumResponse, error)
+	UpdateAlbum(ctx context.Context, req grpcclient.UpdateAlbumRequest) (*grpcclient.AlbumResponse, error)
+	DeleteAlbum(ctx context.Context, albumID, userID uuid.UUID) error
+}
+
 type CreateOrderUseCase interface {
 	Execute(ctx context.Context, input usecaseOrder.CreateOrderInput) (*usecaseOrder.OrderOutput, error)
 }

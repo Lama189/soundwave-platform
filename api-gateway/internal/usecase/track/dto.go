@@ -65,3 +65,15 @@ func toTrackStreamOutput(res *grpcclient.TrackStreamResponse) *GetTrackStreamOut
 		ExpiresAt: res.ExpiresAt,
 	}
 }
+
+type GetTrackInput struct {
+	TrackID uuid.UUID
+}
+
+func (in *GetTrackInput) Validate() error {
+	if in.TrackID == uuid.Nil {
+		return fmt.Errorf("%w: track id is required", ErrInvalidInput)
+	}
+
+	return nil
+}

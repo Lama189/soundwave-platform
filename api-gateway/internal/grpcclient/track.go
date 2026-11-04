@@ -134,3 +134,45 @@ func (c *TrackClient) GetTrackStream(ctx context.Context, req GetTrackStreamRequ
 
 	return toTrackStreamResponse(streamRes), nil
 }
+
+func (c *TrackClient) GetTrack(ctx context.Context, trackID uuid.UUID) (*TrackResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	pbRes, err := c.grpcClient.GetTrack(ctx, &catalogpb.GetTrackRequest{
+		TrackId: trackID.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toTrackResponse(pbRes.GetTrack())
+}
+
+func (c *TrackClient) GetTracks(ctx context.Context, trackIDs []uuid.UUID) ([]*TrackResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	strIDs := make([]string, len(trackIDs))
+	for i, id := range trackIDs {
+		strIDs[i] = id.String()
+	}
+
+	pbRes, err := c.grpcClient.GetTracks(ctx, &catalogpb.GetTracksRequest{
+		TrackIds: strIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*TrackResponse, len(pbRes.GetTracks()))
+	for i, t := range pbRes.GetTracks() {
+		tr, err := toTrackResponse(t)
+		if err != nil {
+			return nil, err
+		}
+		res[i] = tr
+	}
+
+	return res, nil
+}

@@ -76,6 +76,8 @@ type TrackResponse struct {
 	PreviewKey      string     `json:"preview_key"`
 	RawKey          string     `json:"raw_key"`
 	Status          string     `json:"status"`
+	Price           int64      `json:"price"`
+	Currency        string     `json:"currency"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
@@ -123,8 +125,78 @@ func toTrackResponse(pb *catalogpb.Track) (*TrackResponse, error) {
 		PreviewKey:      pb.GetPreviewKey(),
 		RawKey:          pb.GetRawKey(),
 		Status:          pb.GetStatus(),
+		Price:           pb.GetPrice(),
+		Currency:        pb.GetCurrency(),
 		CreatedAt:       createdAt,
 		UpdatedAt:       updatedAt,
+	}, nil
+}
+
+type AlbumResponse struct {
+	ID          uuid.UUID `json:"id"`
+	ArtistID    uuid.UUID `json:"artist_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	CoverKey    string    `json:"cover_key"`
+	Price       int64     `json:"price"`
+	Currency    string    `json:"currency"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type CreateAlbumRequest struct {
+	UserID      uuid.UUID
+	ArtistID    uuid.UUID
+	Title       string
+	Description string
+	CoverKey    string
+	Price       int64
+	Currency    string
+}
+
+type UpdateAlbumRequest struct {
+	AlbumID     uuid.UUID
+	UserID      uuid.UUID
+	Title       string
+	Description string
+	CoverKey    string
+	Price       int64
+	Currency    string
+}
+
+func toAlbumResponse(pb *catalogpb.Album) (*AlbumResponse, error) {
+	if pb == nil {
+		return nil, nil
+	}
+
+	id, err := uuid.Parse(pb.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("invalid album id format: %w", err)
+	}
+
+	artistID, err := uuid.Parse(pb.GetArtistId())
+	if err != nil {
+		return nil, fmt.Errorf("invalid artist id format: %w", err)
+	}
+
+	var createdAt, updatedAt time.Time
+	if pb.GetCreatedAt() != nil {
+		createdAt = pb.GetCreatedAt().AsTime()
+	}
+	if pb.GetUpdatedAt() != nil {
+		updatedAt = pb.GetUpdatedAt().AsTime()
+	}
+
+	return &AlbumResponse{
+		ID:          id,
+		ArtistID:    artistID,
+		Title:       pb.GetTitle(),
+		Description: pb.GetDescription(),
+		CoverKey:    pb.GetCoverKey(),
+		Price:       pb.GetPrice(),
+		Currency:    pb.GetCurrency(),
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}, nil
 }
 

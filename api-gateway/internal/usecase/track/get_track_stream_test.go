@@ -40,6 +40,10 @@ func (m *mockCatalogTrackClient) GetTrackStream(ctx context.Context, req grpccli
 	return nil, nil
 }
 
+func (m *mockCatalogTrackClient) GetTrack(ctx context.Context, trackID uuid.UUID) (*grpcclient.TrackResponse, error) {
+	return nil, nil
+}
+
 func TestGetTrackStreamInput_Validate(t *testing.T) {
 	validTrackID := uuid.New()
 	validUserID := uuid.New()

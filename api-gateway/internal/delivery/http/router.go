@@ -12,6 +12,7 @@ func NewRouter(
 	userHandler *UserHandler,
 	artistHandler *ArtistHandler,
 	trackHandler *TrackHandler,
+	albumHandler *AlbumHandler,
 	orderHandler *OrderHandler,
 	tokenValidator jwt.TokenValidator,
 ) *chi.Mux {
@@ -40,6 +41,7 @@ func NewRouter(
 
 		r.Route("/artists", func(r chi.Router) {
 			r.Get("/{id}", artistHandler.GetByID)
+			r.Get("/{id}/albums", albumHandler.GetByArtistID)
 
 			r.Group(func(r chi.Router) {
 				r.Use(AuthMiddleware(tokenValidator))
@@ -48,7 +50,19 @@ func NewRouter(
 			})
 		})
 
+		r.Route("/albums", func(r chi.Router) {
+			r.Get("/{id}", albumHandler.GetByID)
+
+			r.Group(func(r chi.Router) {
+				r.Use(AuthMiddleware(tokenValidator))
+				r.Post("/", albumHandler.CreateAlbum)
+				r.Put("/{id}", albumHandler.UpdateAlbum)
+				r.Delete("/{id}", albumHandler.DeleteAlbum)
+			})
+		})
+
 		r.Route("/tracks", func(r chi.Router) {
+			r.Get("/{id}", trackHandler.GetByID)
 			r.With(OptionalAuthMiddleware(tokenValidator)).Get("/{id}/stream", trackHandler.GetTrackStream)
 
 			r.Group(func(r chi.Router) {

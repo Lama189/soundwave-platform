@@ -16,6 +16,7 @@ type TrackHandler struct {
 	completeProcessing CompleteProcessingUseCase
 	failProcessing     FailProcessingUseCase
 	getTrackStream     GetTrackStreamUseCase
+	getTrack           GetTrackUseCase
 }
 
 func NewTrackHandler(
@@ -24,6 +25,7 @@ func NewTrackHandler(
 	completeProcessing CompleteProcessingUseCase,
 	failProcessing FailProcessingUseCase,
 	getTrackStream GetTrackStreamUseCase,
+	getTrack GetTrackUseCase,
 ) *TrackHandler {
 	return &TrackHandler{
 		uploadTrack:        uploadTrack,
@@ -31,6 +33,7 @@ func NewTrackHandler(
 		completeProcessing: completeProcessing,
 		failProcessing:     failProcessing,
 		getTrackStream:     getTrackStream,
+		getTrack:           getTrack,
 	}
 }
 
@@ -171,4 +174,23 @@ func (h *TrackHandler) GetTrackStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendJSON(w, http.StatusOK, res)
+}
+
+func (h *TrackHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	trackID, err := uuid.Parse(idStr)
+	if err != nil {
+		SendError(w, http.StatusBadRequest, "invalid track id")
+		return
+	}
+
+	track, err := h.getTrack.Execute(r.Context(), usecaseTrack.GetTrackInput{
+		TrackID: trackID,
+	})
+	if err != nil {
+		HandleGRPCError(w, err)
+		return
+	}
+
+	SendJSON(w, http.StatusOK, track)
 }
