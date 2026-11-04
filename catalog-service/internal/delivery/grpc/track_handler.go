@@ -165,6 +165,39 @@ func (s *TrackGRPCServer) GetTracks(ctx context.Context, req *catalogpb.GetTrack
 	}, nil
 }
 
+func (s *TrackGRPCServer) GetTrackStream(ctx context.Context, req *catalogpb.GetTrackStreamRequest) (*catalogpb.GetTrackStreamResponse, error) {
+	trackID, err := uuid.Parse(req.GetTrackId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid track id format")
+	}
+
+	var userID *uuid.UUID
+	if req.GetUserId() != "" {
+		parsedUserID, err := uuid.Parse(req.GetUserId())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid user id format")
+		}
+
+		userID = &parsedUserID
+	}
+
+	dto := track.GetTrackStreamDTO{
+		TrackID: trackID,
+		UserID:  userID,
+	}
+
+	stream, err := s.service.GetTrackStream(ctx, dto)
+	if err != nil {
+		return nil, mapDomainError(err)
+	}
+
+	return &catalogpb.GetTrackStreamResponse{
+		StreamUrl: stream.StreamURL,
+		IsPreview: stream.IsPreview,
+		ExpiresAt: timestamppb.New(stream.ExpiresAt),
+	}, nil
+}
+
 func toProtoTrack(t *track.TrackOutputDTO) *catalogpb.Track {
 	if t == nil {
 		return nil

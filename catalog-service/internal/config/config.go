@@ -9,12 +9,17 @@ import (
 )
 
 type Config struct {
-	Env      string `env:"ENV" env-default:"local"`
-	GRPC     GRPCConfig
-	Postgres PostgresConfig
-	Storage  StorageConfig
-	RabbitMQ RabbitMQConfig
-	Relay    RelayConfig
+	Env            string `env:"ENV" env-default:"local"`
+	GRPC           GRPCConfig
+	Postgres       PostgresConfig
+	Storage        StorageConfig
+	RabbitMQ       RabbitMQConfig
+	Relay          RelayConfig
+	TrackStreaming TrackStreamingConfig
+}
+
+type TrackStreamingConfig struct {
+	StreamURLExpiry time.Duration `env:"STREAM_URL_EXPIRY" env-default:"15m"`
 }
 
 type GRPCConfig struct {

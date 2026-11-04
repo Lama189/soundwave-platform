@@ -77,6 +77,7 @@ func main() {
 	confirmUploadUseCase := trackUsecase.NewConfirmUploadUseCase(trackSvcClient, log)
 	completeProcessingUseCase := trackUsecase.NewCompleteProcessingUseCase(trackSvcClient, log)
 	failProcessingUseCase := trackUsecase.NewFailProcessingUseCase(trackSvcClient, log)
+	getTrackStreamUseCase := trackUsecase.NewGetTrackStreamUseCase(trackSvcClient, log)
 	createOrderUseCase := orderUsecase.NewCreateOrderUseCase(orderSvcClient, log)
 
 	userHandler := deliveryHttp.NewUserHandler(userSvcClient)
@@ -86,6 +87,7 @@ func main() {
 		confirmUploadUseCase,
 		completeProcessingUseCase,
 		failProcessingUseCase,
+		getTrackStreamUseCase,
 	)
 	orderHandler := deliveryHttp.NewOrderHandler(createOrderUseCase)
 

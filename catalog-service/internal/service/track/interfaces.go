@@ -43,6 +43,7 @@ type TrackLikeRepository interface {
 
 type Storage interface {
 	GenerateUploadURL(ctx context.Context, key string) (string, error)
+	GenerateAudioDownloadURL(ctx context.Context, key string, expiry time.Duration) (string, error)
 	ObjectExists(ctx context.Context, key string) (bool, error)
 }
 

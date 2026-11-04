@@ -66,7 +66,7 @@ func main() {
 	artistService := artist.NewService(artistRepo)
 	albumService := album.NewService(albumRepo, artistRepo)
 	userPurchaseService := user_purchase.NewService(uowManager, userPurchaseRepo, trackRepo, albumRepo, logger)
-	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage, userPurchaseService)
+	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage, userPurchaseService, cfg.TrackStreaming.StreamURLExpiry)
 
 	rawAudioConsumer := deliveryAmqp.NewRawAudioConsumer(amqpConn, trackService, logger)
 	if err := rawAudioConsumer.Start(ctx); err != nil {

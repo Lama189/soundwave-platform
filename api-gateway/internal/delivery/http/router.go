@@ -49,6 +49,8 @@ func NewRouter(
 		})
 
 		r.Route("/tracks", func(r chi.Router) {
+			r.With(OptionalAuthMiddleware(tokenValidator)).Get("/{id}/stream", trackHandler.GetTrackStream)
+
 			r.Group(func(r chi.Router) {
 				r.Use(AuthMiddleware(tokenValidator))
 				r.Post("/upload", trackHandler.UploadTrack)

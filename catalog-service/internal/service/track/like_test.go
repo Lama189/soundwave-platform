@@ -118,7 +118,7 @@ func TestLikeTrack_AccessCheck(t *testing.T) {
 				},
 			}
 
-			svc := track.NewTrackService(nil, trackRepo, likeRepo, nil, nil, nil, accessChecker)
+			svc := track.NewTrackService(nil, trackRepo, likeRepo, nil, nil, nil, accessChecker, 0)
 
 			err := svc.LikeTrack(context.Background(), userID, trackID)
 			if (err != nil) != (tt.wantErr != nil) {

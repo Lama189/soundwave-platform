@@ -12,15 +12,29 @@ import (
 )
 
 func AuthMiddleware(validator jwt.TokenValidator) func(http.Handler) http.Handler {
+	return authMiddleware(validator, true)
+}
+
+func OptionalAuthMiddleware(validator jwt.TokenValidator) func(http.Handler) http.Handler {
+	return authMiddleware(validator, false)
+}
+
+func authMiddleware(validator jwt.TokenValidator, required bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
+
 			if authHeader == "" {
-				SendError(w, http.StatusUnauthorized, "authorization header required")
+				if required {
+					SendError(w, http.StatusUnauthorized, "authorization header required")
+					return
+				}
+
+				next.ServeHTTP(w, r)
 				return
 			}
 
-			parts := strings.Split(authHeader, " ")
+			parts := strings.Fields(authHeader)
 			if len(parts) != 2 || parts[0] != "Bearer" {
 				SendError(w, http.StatusUnauthorized, "invalid authorization header format")
 				return
@@ -28,10 +42,9 @@ func AuthMiddleware(validator jwt.TokenValidator) func(http.Handler) http.Handle
 
 			claims, err := validator.ValidateAccessToken(parts[1])
 			if err != nil {
-				switch {
-				case errors.Is(err, jwt.ErrTokenExpired):
+				if errors.Is(err, jwt.ErrTokenExpired) {
 					SendError(w, http.StatusUnauthorized, "token has expired")
-				default:
+				} else {
 					SendError(w, http.StatusUnauthorized, "invalid or malformed token")
 				}
 				return

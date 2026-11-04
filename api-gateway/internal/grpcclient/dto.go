@@ -1,8 +1,10 @@
 package grpcclient
 
 import (
+	"fmt"
 	"time"
 
+	catalogpb "github.com/Lama189/soundwave-platform/gen/go/catalog/v1"
 	orderpb "github.com/Lama189/soundwave-platform/gen/go/order/v1"
 	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/Lama189/soundwave-platform/pkg/money"
@@ -78,6 +80,54 @@ type TrackResponse struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
+func toTrackResponse(pb *catalogpb.Track) (*TrackResponse, error) {
+	if pb == nil {
+		return nil, nil
+	}
+
+	id, err := uuid.Parse(pb.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("invalid track id format: %w", err)
+	}
+
+	artistID, err := uuid.Parse(pb.GetArtistId())
+	if err != nil {
+		return nil, fmt.Errorf("invalid artist id format: %w", err)
+	}
+
+	var albumID *uuid.UUID
+	if pb.AlbumId != nil && *pb.AlbumId != "" {
+		parsedAlbumID, err := uuid.Parse(*pb.AlbumId)
+		if err != nil {
+			return nil, fmt.Errorf("invalid album id format: %w", err)
+		}
+		albumID = &parsedAlbumID
+	}
+
+	var createdAt, updatedAt time.Time
+	if pb.GetCreatedAt() != nil {
+		createdAt = pb.GetCreatedAt().AsTime()
+	}
+	if pb.GetUpdatedAt() != nil {
+		updatedAt = pb.GetUpdatedAt().AsTime()
+	}
+
+	return &TrackResponse{
+		ID:              id,
+		ArtistID:        artistID,
+		AlbumID:         albumID,
+		Title:           pb.GetTitle(),
+		DurationSeconds: pb.GetDurationSeconds(),
+		CoverKey:        pb.GetCoverKey(),
+		FileKey:         pb.GetFileKey(),
+		PreviewKey:      pb.GetPreviewKey(),
+		RawKey:          pb.GetRawKey(),
+		Status:          pb.GetStatus(),
+		CreatedAt:       createdAt,
+		UpdatedAt:       updatedAt,
+	}, nil
+}
+
 type UploadTrackRequest struct {
 	UserID   uuid.UUID
 	AlbumID  *uuid.UUID
@@ -108,6 +158,25 @@ type FailProcessingRequest struct {
 }
 
 type FailProcessingResponse struct{}
+
+type GetTrackStreamRequest struct {
+	TrackID uuid.UUID
+	UserID  *uuid.UUID
+}
+
+type TrackStreamResponse struct {
+	StreamURL string    `json:"stream_url"`
+	IsPreview bool      `json:"is_preview"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+func toTrackStreamResponse(pb *catalogpb.GetTrackStreamResponse) *TrackStreamResponse {
+	return &TrackStreamResponse{
+		StreamURL: pb.GetStreamUrl(),
+		IsPreview: pb.GetIsPreview(),
+		ExpiresAt: pb.GetExpiresAt().AsTime(),
+	}
+}
 
 type CreateOrderItemRequest struct {
 	ItemType itemtype.ItemType

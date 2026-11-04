@@ -25,6 +25,7 @@ type TrackService interface {
 	FailProcessing(ctx context.Context, trackID uuid.UUID) error
 	GetByID(ctx context.Context, id uuid.UUID) (*track.TrackOutputDTO, error)
 	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*track.TrackOutputDTO, error)
+	GetTrackStream(ctx context.Context, dto track.GetTrackStreamDTO) (*track.TrackStreamOutputDTO, error)
 }
 
 type AlbumService interface {

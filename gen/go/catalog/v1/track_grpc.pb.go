@@ -25,6 +25,7 @@ const (
 	TrackService_FailProcessing_FullMethodName     = "/catalog.v1.TrackService/FailProcessing"
 	TrackService_GetTrack_FullMethodName           = "/catalog.v1.TrackService/GetTrack"
 	TrackService_GetTracks_FullMethodName          = "/catalog.v1.TrackService/GetTracks"
+	TrackService_GetTrackStream_FullMethodName     = "/catalog.v1.TrackService/GetTrackStream"
 )
 
 // TrackServiceClient is the client API for TrackService service.
@@ -37,6 +38,7 @@ type TrackServiceClient interface {
 	FailProcessing(ctx context.Context, in *FailProcessingRequest, opts ...grpc.CallOption) (*FailProcessingResponse, error)
 	GetTrack(ctx context.Context, in *GetTrackRequest, opts ...grpc.CallOption) (*GetTrackResponse, error)
 	GetTracks(ctx context.Context, in *GetTracksRequest, opts ...grpc.CallOption) (*GetTracksResponse, error)
+	GetTrackStream(ctx context.Context, in *GetTrackStreamRequest, opts ...grpc.CallOption) (*GetTrackStreamResponse, error)
 }
 
 type trackServiceClient struct {
@@ -107,6 +109,16 @@ func (c *trackServiceClient) GetTracks(ctx context.Context, in *GetTracksRequest
 	return out, nil
 }
 
+func (c *trackServiceClient) GetTrackStream(ctx context.Context, in *GetTrackStreamRequest, opts ...grpc.CallOption) (*GetTrackStreamResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrackStreamResponse)
+	err := c.cc.Invoke(ctx, TrackService_GetTrackStream_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrackServiceServer is the server API for TrackService service.
 // All implementations must embed UnimplementedTrackServiceServer
 // for forward compatibility.
@@ -117,6 +129,7 @@ type TrackServiceServer interface {
 	FailProcessing(context.Context, *FailProcessingRequest) (*FailProcessingResponse, error)
 	GetTrack(context.Context, *GetTrackRequest) (*GetTrackResponse, error)
 	GetTracks(context.Context, *GetTracksRequest) (*GetTracksResponse, error)
+	GetTrackStream(context.Context, *GetTrackStreamRequest) (*GetTrackStreamResponse, error)
 	mustEmbedUnimplementedTrackServiceServer()
 }
 
@@ -144,6 +157,9 @@ func (UnimplementedTrackServiceServer) GetTrack(context.Context, *GetTrackReques
 }
 func (UnimplementedTrackServiceServer) GetTracks(context.Context, *GetTracksRequest) (*GetTracksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTracks not implemented")
+}
+func (UnimplementedTrackServiceServer) GetTrackStream(context.Context, *GetTrackStreamRequest) (*GetTrackStreamResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTrackStream not implemented")
 }
 func (UnimplementedTrackServiceServer) mustEmbedUnimplementedTrackServiceServer() {}
 func (UnimplementedTrackServiceServer) testEmbeddedByValue()                      {}
@@ -274,6 +290,24 @@ func _TrackService_GetTracks_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrackService_GetTrackStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrackStreamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).GetTrackStream(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_GetTrackStream_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).GetTrackStream(ctx, req.(*GetTrackStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrackService_ServiceDesc is the grpc.ServiceDesc for TrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +338,10 @@ var TrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTracks",
 			Handler:    _TrackService_GetTracks_Handler,
+		},
+		{
+			MethodName: "GetTrackStream",
+			Handler:    _TrackService_GetTrackStream_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

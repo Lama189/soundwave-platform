@@ -1,6 +1,7 @@
 package track
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
@@ -86,4 +87,27 @@ func toOutputDTOList(tracks []*domain.Track) []*TrackOutputDTO {
 	}
 
 	return list
+}
+
+type GetTrackStreamDTO struct {
+	TrackID uuid.UUID
+	UserID  *uuid.UUID
+}
+
+func (in *GetTrackStreamDTO) Validate() error {
+	if in.TrackID == uuid.Nil {
+		return fmt.Errorf("%w: track id is required", domain.ErrInvalidInput)
+	}
+
+	if in.UserID != nil && *in.UserID == uuid.Nil {
+		return fmt.Errorf("%w: user id cannot be empty", domain.ErrInvalidInput)
+	}
+
+	return nil
+}
+
+type TrackStreamOutputDTO struct {
+	StreamURL string
+	IsPreview bool
+	ExpiresAt time.Time
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/api-gateway/internal/grpcclient"
 	usecaseArtist "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/artist"
-	"github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/order"
+	usecaseOrder "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/order"
 	usecaseTrack "github.com/Lama189/soundwave-platform/api-gateway/internal/usecase/track"
 	"github.com/google/uuid"
 )
@@ -42,6 +42,10 @@ type FailProcessingUseCase interface {
 	Execute(ctx context.Context, input usecaseTrack.FailProcessingInput) error
 }
 
+type GetTrackStreamUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.GetTrackStreamInput) (*usecaseTrack.GetTrackStreamOutput, error)
+}
+
 type CreateOrderUseCase interface {
-	Execute(ctx context.Context, input order.CreateOrderInput) (*order.OrderOutput, error)
+	Execute(ctx context.Context, input usecaseOrder.CreateOrderInput) (*usecaseOrder.OrderOutput, error)
 }

@@ -13,6 +13,7 @@ service TrackService {
   rpc FailProcessing(FailProcessingRequest) returns (FailProcessingResponse);
   rpc GetTrack(GetTrackRequest) returns (GetTrackResponse);
   rpc GetTracks(GetTracksRequest) returns (GetTracksResponse);
+  rpc GetTrackStream(GetTrackStreamRequest) returns (GetTrackStreamResponse);
 }
 
 message Track {
@@ -88,3 +89,15 @@ message GetTracksRequest {
 message GetTracksResponse {
   repeated Track tracks = 1;
 }
+
+message GetTrackStreamRequest {
+  string track_id = 1;
+  optional string user_id = 2;
+}
+
+message GetTrackStreamResponse {
+  string stream_url = 1;
+  bool is_preview = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+

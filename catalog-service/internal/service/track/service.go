@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/uow"
@@ -14,13 +15,14 @@ import (
 )
 
 type Service struct {
-	uow     UnitOfWorkManager
-	tracks  TrackRepository
-	likes   TrackLikeRepository
-	artists ArtistRepository
-	albums  AlbumRepository
-	storage Storage
-	access  AccessChecker
+	uow             UnitOfWorkManager
+	tracks          TrackRepository
+	likes           TrackLikeRepository
+	artists         ArtistRepository
+	albums          AlbumRepository
+	storage         Storage
+	access          AccessChecker
+	streamURLExpiry time.Duration
 }
 
 func NewTrackService(
@@ -31,15 +33,21 @@ func NewTrackService(
 	albums AlbumRepository,
 	storage Storage,
 	access AccessChecker,
+	defaultStreamURLExpiry time.Duration,
 ) *Service {
+	if defaultStreamURLExpiry <= 0 {
+		defaultStreamURLExpiry = 15 * time.Minute
+	}
+
 	return &Service{
-		uow:     uowManager,
-		tracks:  tracks,
-		likes:   likes,
-		artists: artists,
-		albums:  albums,
-		storage: storage,
-		access:  access,
+		uow:             uowManager,
+		tracks:          tracks,
+		likes:           likes,
+		artists:         artists,
+		albums:          albums,
+		storage:         storage,
+		access:          access,
+		streamURLExpiry: defaultStreamURLExpiry,
 	}
 }
 
@@ -556,4 +564,68 @@ func (s *Service) GetByAlbumID(ctx context.Context, albumID uuid.UUID) ([]*Track
 	}
 
 	return toOutputDTOList(tracks), nil
+}
+
+func (s *Service) GetTrackStream(ctx context.Context, dto GetTrackStreamDTO) (*TrackStreamOutputDTO, error) {
+	if err := dto.Validate(); err != nil {
+		return nil, err
+	}
+
+	track, err := s.tracks.GetByID(ctx, dto.TrackID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return nil, domain.ErrTrackNotFound
+		}
+		return nil, fmt.Errorf("find track for streaming: %w", err)
+	}
+
+	if track.Status != domain.TrackStatusReady {
+		return nil, domain.ErrTrackNotReady
+	}
+
+	hasAccess := false
+	if track.Price == 0 {
+		hasAccess = true
+	} else if s.access != nil {
+		hasAccess, err = s.access.HasTrackAccess(ctx, dto.UserID, dto.TrackID)
+		if err != nil {
+			return nil, fmt.Errorf("check track stream access: %w", err)
+		}
+	}
+
+	if !hasAccess && dto.UserID != nil && s.artists != nil {
+		artist, err := s.artists.GetByID(ctx, track.ArtistID)
+		if err == nil && artist != nil && artist.UserID == *dto.UserID {
+			hasAccess = true
+		}
+	}
+
+	targetKey := track.PreviewKey
+	isPreview := true
+
+	if hasAccess {
+		targetKey = track.FileKey
+		isPreview = false
+	}
+
+	if targetKey == "" {
+		targetKey = track.FileKey
+		isPreview = false
+	}
+
+	if targetKey == "" {
+		return nil, fmt.Errorf("%w: audio file key is empty", domain.ErrNotFound)
+	}
+
+	expiresAt := time.Now().Add(s.streamURLExpiry)
+	streamURL, err := s.storage.GenerateAudioDownloadURL(ctx, targetKey, s.streamURLExpiry)
+	if err != nil {
+		return nil, fmt.Errorf("generate stream presigned url: %w", err)
+	}
+
+	return &TrackStreamOutputDTO{
+		StreamURL: streamURL,
+		IsPreview: isPreview,
+		ExpiresAt: expiresAt,
+	}, nil
 }

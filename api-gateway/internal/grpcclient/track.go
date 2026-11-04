@@ -114,50 +114,23 @@ func (c *TrackClient) FailProcessing(ctx context.Context, req FailProcessingRequ
 	return &FailProcessingResponse{}, nil
 }
 
-func toTrackResponse(pb *catalogpb.Track) (*TrackResponse, error) {
-	if pb == nil {
-		return nil, nil
+func (c *TrackClient) GetTrackStream(ctx context.Context, req GetTrackStreamRequest) (*TrackStreamResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	var userID *string
+	if req.UserID != nil {
+		s := req.UserID.String()
+		userID = &s
 	}
 
-	id, err := uuid.Parse(pb.GetId())
+	streamRes, err := c.grpcClient.GetTrackStream(ctx, &catalogpb.GetTrackStreamRequest{
+		TrackId: req.TrackID.String(),
+		UserId:  userID,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("invalid track id format: %w", err)
+		return nil, err
 	}
 
-	artistID, err := uuid.Parse(pb.GetArtistId())
-	if err != nil {
-		return nil, fmt.Errorf("invalid artist id format: %w", err)
-	}
-
-	var albumID *uuid.UUID
-	if pb.AlbumId != nil && *pb.AlbumId != "" {
-		parsedAlbumID, err := uuid.Parse(*pb.AlbumId)
-		if err != nil {
-			return nil, fmt.Errorf("invalid album id format: %w", err)
-		}
-		albumID = &parsedAlbumID
-	}
-
-	var createdAt, updatedAt time.Time
-	if pb.GetCreatedAt() != nil {
-		createdAt = pb.GetCreatedAt().AsTime()
-	}
-	if pb.GetUpdatedAt() != nil {
-		updatedAt = pb.GetUpdatedAt().AsTime()
-	}
-
-	return &TrackResponse{
-		ID:              id,
-		ArtistID:        artistID,
-		AlbumID:         albumID,
-		Title:           pb.GetTitle(),
-		DurationSeconds: pb.GetDurationSeconds(),
-		CoverKey:        pb.GetCoverKey(),
-		FileKey:         pb.GetFileKey(),
-		PreviewKey:      pb.GetPreviewKey(),
-		RawKey:          pb.GetRawKey(),
-		Status:          pb.GetStatus(),
-		CreatedAt:       createdAt,
-		UpdatedAt:       updatedAt,
-	}, nil
+	return toTrackStreamResponse(streamRes), nil
 }
