@@ -15,6 +15,7 @@ import (
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/repository/postgres"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/album"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/artist"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/playlist"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/user_purchase"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/worker"
@@ -58,6 +59,7 @@ func main() {
 	artistRepo := postgres.NewArtistRepository(pgPool)
 	albumRepo := postgres.NewAlbumRepository(pgPool)
 	trackRepo := postgres.NewTrackRepository(pgPool)
+	playlistRepo := postgres.NewPlaylistRepository(pgPool)
 	trackLikeRepo := postgres.NewTrackLikeRepository(pgPool)
 	userPurchaseRepo := postgres.NewUserPurchaseRepository(pgPool)
 	outboxRepo := postgres.NewOutboxRepository(pgPool)
@@ -67,6 +69,7 @@ func main() {
 	albumService := album.NewService(albumRepo, artistRepo)
 	userPurchaseService := user_purchase.NewService(uowManager, userPurchaseRepo, trackRepo, albumRepo, logger)
 	trackService := track.NewTrackService(uowManager, trackRepo, trackLikeRepo, artistRepo, albumRepo, minioStorage, userPurchaseService, cfg.TrackStreaming.StreamURLExpiry)
+	playlistService := playlist.NewService(playlistRepo, trackRepo, userPurchaseService)
 
 	rawAudioConsumer := deliveryAmqp.NewRawAudioConsumer(amqpConn, trackService, logger)
 	if err := rawAudioConsumer.Start(ctx); err != nil {
@@ -92,10 +95,12 @@ func main() {
 	artistGrpcHandler := deliveryGrpc.NewArtistGRPCServer(artistService)
 	trackGrpcHandler := deliveryGrpc.NewTrackGRPCServer(trackService)
 	albumGRPCHandler := deliveryGrpc.NewAlbumGRPCServer(albumService)
+	playlistGRPCHandler := deliveryGrpc.NewPlaylistGRPCServer(playlistService)
 
 	catalogpb.RegisterArtistServiceServer(grpcServer, artistGrpcHandler)
 	catalogpb.RegisterTrackServiceServer(grpcServer, trackGrpcHandler)
 	catalogpb.RegisterAlbumServiceServer(grpcServer, albumGRPCHandler)
+	catalogpb.RegisterPlaylistServiceServer(grpcServer, playlistGRPCHandler)
 
 	lis, err := net.Listen("tcp", cfg.GRPC.Port)
 	if err != nil {

@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "github.com/Lama189/soundwave-platform/gen/go/catalog/v1;catalogpb";
+
+import "google/protobuf/timestamp.proto";
+
+service PlaylistService {
+  rpc CreatePlaylist(CreatePlaylistRequest) returns (CreatePlaylistResponse);
+  rpc GetPlaylist(GetPlaylistRequest) returns (GetPlaylistResponse);
+  rpc GetMyPlaylists(GetMyPlaylistsRequest) returns (GetMyPlaylistsResponse);
+  rpc AddTrackToPlaylist(AddTrackToPlaylistRequest) returns (AddTrackToPlaylistResponse);
+  rpc RemoveTrackFromPlaylist(RemoveTrackFromPlaylistRequest) returns (RemoveTrackFromPlaylistResponse);
+  rpc ChangePlaylistTrackPosition(ChangePlaylistTrackPositionRequest) returns (ChangePlaylistTrackPositionResponse);
+  rpc UpdatePlaylist(UpdatePlaylistRequest) returns (UpdatePlaylistResponse);
+  rpc DeletePlaylist(DeletePlaylistRequest) returns (DeletePlaylistResponse);
+}
+
+message Playlist {
+  string id = 1;
+  string user_id = 2;
+  string title = 3;
+  string description = 4;
+  bool is_private = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message PlaylistTrack {
+  string track_id = 1;
+  int32 position = 2;
+  google.protobuf.Timestamp added_at = 3;
+  string title = 4;
+  string artist_id = 5;
+  int64 duration_seconds = 6;
+  string cover_key = 7;
+  string status = 8;
+}
+
+message CreatePlaylistRequest {
+  string user_id = 1;
+  string title = 2;
+  string description = 3;
+  bool is_private = 4;
+}
+
+message CreatePlaylistResponse {
+  Playlist playlist = 1;
+}
+
+message GetPlaylistRequest {
+  string playlist_id = 1;
+  optional string user_id = 2;
+}
+
+message GetPlaylistResponse {
+  Playlist playlist = 1;
+  repeated PlaylistTrack tracks = 2;
+}
+
+message GetMyPlaylistsRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetMyPlaylistsResponse {
+  repeated Playlist playlists = 1;
+}
+
+message AddTrackToPlaylistRequest {
+  string user_id = 1;
+  string playlist_id = 2;
+  string track_id = 3;
+  int32 position = 4;
+}
+
+message AddTrackToPlaylistResponse {}
+
+message RemoveTrackFromPlaylistRequest {
+  string user_id = 1;
+  string playlist_id = 2;
+  string track_id = 3;
+}
+
+message RemoveTrackFromPlaylistResponse {}
+
+message ChangePlaylistTrackPositionRequest {
+  string user_id = 1;
+  string playlist_id = 2;
+  string track_id = 3;
+  int32 new_position = 4;
+}
+
+message ChangePlaylistTrackPositionResponse {}
+
+message UpdatePlaylistRequest {
+  string user_id = 1;
+  string playlist_id = 2;
+  string title = 3;
+  string description = 4;
+  bool is_private = 5;
+}
+
+message UpdatePlaylistResponse {
+  Playlist playlist = 1;
+}
+
+message DeletePlaylistRequest {
+  string user_id = 1;
+  string playlist_id = 2;
+}
+
+message DeletePlaylistResponse {}

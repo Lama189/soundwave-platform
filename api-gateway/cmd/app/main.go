@@ -71,6 +71,7 @@ func main() {
 	catalogSvcClient := grpcclient.NewArtistClient(catalogConn, cfg.Services.Catalog.Timeout)
 	trackSvcClient := grpcclient.NewTrackClient(catalogConn, cfg.Services.Catalog.Timeout)
 	albumSvcClient := grpcclient.NewAlbumClient(catalogConn, cfg.Services.Catalog.Timeout)
+	playlistSvcClient := grpcclient.NewPlaylistClient(catalogConn, cfg.Services.Catalog.Timeout)
 	orderSvcClient := grpcclient.NewOrderClient(orderConn, cfg.Services.Order.Timeout)
 
 	becomeArtistUseCase := artistUsecase.NewBecomeArtistUseCase(catalogSvcClient, userSvcClient, log)
@@ -87,6 +88,7 @@ func main() {
 	userHandler := deliveryHttp.NewUserHandler(userSvcClient)
 	artistHandler := deliveryHttp.NewArtistHandler(catalogSvcClient, becomeArtistUseCase)
 	albumHandler := deliveryHttp.NewAlbumHandler(albumSvcClient)
+	playlistHandler := deliveryHttp.NewPlaylistHandler(playlistSvcClient)
 	trackHandler := deliveryHttp.NewTrackHandler(
 		uploadTrackUseCase,
 		confirmUploadUseCase,
@@ -99,7 +101,7 @@ func main() {
 	)
 	orderHandler := deliveryHttp.NewOrderHandler(createOrderUseCase)
 
-	router := deliveryHttp.NewRouter(userHandler, artistHandler, trackHandler, albumHandler, orderHandler, jwtValidator)
+	router := deliveryHttp.NewRouter(userHandler, artistHandler, trackHandler, albumHandler, playlistHandler, orderHandler, jwtValidator)
 
 	srv := &http.Server{
 		Addr:         cfg.HTTP.Port,

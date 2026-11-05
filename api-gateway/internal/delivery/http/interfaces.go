@@ -66,6 +66,17 @@ type AlbumClient interface {
 	DeleteAlbum(ctx context.Context, albumID, userID uuid.UUID) error
 }
 
+type PlaylistClient interface {
+	CreatePlaylist(ctx context.Context, req grpcclient.CreatePlaylistRequest) (*grpcclient.PlaylistResponse, error)
+	GetPlaylist(ctx context.Context, playlistID uuid.UUID, userID *uuid.UUID) (*grpcclient.PlaylistWithTracksResponse, error)
+	GetMyPlaylists(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*grpcclient.PlaylistResponse, error)
+	AddTrackToPlaylist(ctx context.Context, req grpcclient.AddTrackToPlaylistRequest) error
+	RemoveTrackFromPlaylist(ctx context.Context, userID, playlistID, trackID uuid.UUID) error
+	ChangeTrackPosition(ctx context.Context, req grpcclient.ChangePlaylistTrackPositionRequest) error
+	UpdatePlaylist(ctx context.Context, req grpcclient.UpdatePlaylistRequest) (*grpcclient.PlaylistResponse, error)
+	DeletePlaylist(ctx context.Context, userID, playlistID uuid.UUID) error
+}
+
 type CreateOrderUseCase interface {
 	Execute(ctx context.Context, input usecaseOrder.CreateOrderInput) (*usecaseOrder.OrderOutput, error)
 }

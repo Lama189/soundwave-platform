@@ -7,6 +7,7 @@ import (
 
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/album"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/artist"
+	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/playlist"
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/track"
 )
 
@@ -38,4 +39,15 @@ type AlbumService interface {
 	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*album.AlbumOutputDTO, error)
 	Update(ctx context.Context, currentUserID, albumID uuid.UUID, dto album.UpdateAlbumDTO) (*album.AlbumOutputDTO, error)
 	Delete(ctx context.Context, currentUserID, albumID uuid.UUID) error
+}
+
+type PlaylistService interface {
+	Create(ctx context.Context, userID uuid.UUID, dto playlist.CreatePlaylistDTO) (*playlist.PlaylistOutputDTO, error)
+	GetByID(ctx context.Context, currentUserID *uuid.UUID, playlistID uuid.UUID) (*playlist.PlaylistWithTracksDTO, error)
+	GetMyPlaylists(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*playlist.PlaylistOutputDTO, error)
+	AddTrack(ctx context.Context, currentUserID, playlistID, trackID uuid.UUID, position int) error
+	RemoveTrack(ctx context.Context, currentUserID, playlistID, trackID uuid.UUID) error
+	ChangeTrackPosition(ctx context.Context, currentUserID, playlistID, trackID uuid.UUID, newPosition int) error
+	Update(ctx context.Context, currentUserID, playlistID uuid.UUID, dto playlist.UpdatePlaylistDTO) (*playlist.PlaylistOutputDTO, error)
+	Delete(ctx context.Context, currentUserID, playlistID uuid.UUID) error
 }

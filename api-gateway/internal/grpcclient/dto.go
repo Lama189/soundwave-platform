@@ -332,3 +332,131 @@ func toOrderResponse(pb *orderpb.Order) *OrderResponse {
 		UpdatedAt:     updatedAt,
 	}
 }
+
+type PlaylistResponse struct {
+	ID          uuid.UUID `json:"id"`
+	UserID      uuid.UUID `json:"user_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	IsPrivate   bool      `json:"is_private"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type PlaylistTrackResponse struct {
+	TrackID         uuid.UUID `json:"track_id"`
+	Position        int32     `json:"position"`
+	AddedAt         time.Time `json:"added_at"`
+	Title           string    `json:"title"`
+	ArtistID        uuid.UUID `json:"artist_id"`
+	DurationSeconds int64     `json:"duration_seconds"`
+	CoverKey        string    `json:"cover_key"`
+	Status          string    `json:"status"`
+}
+
+type PlaylistWithTracksResponse struct {
+	Playlist PlaylistResponse        `json:"playlist"`
+	Tracks   []PlaylistTrackResponse `json:"tracks"`
+}
+
+type CreatePlaylistRequest struct {
+	UserID      uuid.UUID
+	Title       string
+	Description string
+	IsPrivate   bool
+}
+
+type UpdatePlaylistRequest struct {
+	UserID      uuid.UUID
+	PlaylistID  uuid.UUID
+	Title       string
+	Description string
+	IsPrivate   bool
+}
+
+type AddTrackToPlaylistRequest struct {
+	UserID     uuid.UUID
+	PlaylistID uuid.UUID
+	TrackID    uuid.UUID
+	Position   int32
+}
+
+type ChangePlaylistTrackPositionRequest struct {
+	UserID      uuid.UUID
+	PlaylistID  uuid.UUID
+	TrackID     uuid.UUID
+	NewPosition int32
+}
+
+func toPlaylistResponse(pb *catalogpb.Playlist) (*PlaylistResponse, error) {
+	if pb == nil {
+		return nil, nil
+	}
+
+	id, err := uuid.Parse(pb.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("invalid playlist id format: %w", err)
+	}
+
+	userID, err := uuid.Parse(pb.GetUserId())
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id format: %w", err)
+	}
+
+	var createdAt time.Time
+	if pb.GetCreatedAt() != nil {
+		createdAt = pb.GetCreatedAt().AsTime()
+	}
+
+	return &PlaylistResponse{
+		ID:          id,
+		UserID:      userID,
+		Title:       pb.GetTitle(),
+		Description: pb.GetDescription(),
+		IsPrivate:   pb.GetIsPrivate(),
+		CreatedAt:   createdAt,
+	}, nil
+}
+
+func toPlaylistWithTracksResponse(pb *catalogpb.GetPlaylistResponse) (*PlaylistWithTracksResponse, error) {
+	if pb == nil {
+		return nil, nil
+	}
+
+	p, err := toPlaylistResponse(pb.GetPlaylist())
+	if err != nil {
+		return nil, err
+	}
+
+	tracks := make([]PlaylistTrackResponse, len(pb.GetTracks()))
+	for i, t := range pb.GetTracks() {
+		trackID, err := uuid.Parse(t.GetTrackId())
+		if err != nil {
+			return nil, fmt.Errorf("invalid track id in playlist: %w", err)
+		}
+		artistID, err := uuid.Parse(t.GetArtistId())
+		if err != nil {
+			return nil, fmt.Errorf("invalid artist id in playlist track: %w", err)
+		}
+
+		var addedAt time.Time
+		if t.GetAddedAt() != nil {
+			addedAt = t.GetAddedAt().AsTime()
+		}
+
+		tracks[i] = PlaylistTrackResponse{
+			TrackID:         trackID,
+			Position:        t.GetPosition(),
+			AddedAt:         addedAt,
+			Title:           t.GetTitle(),
+			ArtistID:        artistID,
+			DurationSeconds: t.GetDurationSeconds(),
+			CoverKey:        t.GetCoverKey(),
+			Status:          t.GetStatus(),
+		}
+	}
+
+	return &PlaylistWithTracksResponse{
+		Playlist: *p,
+		Tracks:   tracks,
+	}, nil
+}
