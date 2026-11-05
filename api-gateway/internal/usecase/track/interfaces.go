@@ -14,4 +14,6 @@ type CatalogTrackClient interface {
 	FailProcessing(ctx context.Context, req grpcclient.FailProcessingRequest) (*grpcclient.FailProcessingResponse, error)
 	GetTrackStream(ctx context.Context, req grpcclient.GetTrackStreamRequest) (*grpcclient.TrackStreamResponse, error)
 	GetTrack(ctx context.Context, trackID uuid.UUID) (*grpcclient.TrackResponse, error)
+	LikeTrack(ctx context.Context, userID, trackID uuid.UUID) error
+	UnlikeTrack(ctx context.Context, userID, trackID uuid.UUID) error
 }

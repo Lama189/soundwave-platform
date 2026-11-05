@@ -77,3 +77,33 @@ func (in *GetTrackInput) Validate() error {
 
 	return nil
 }
+
+type LikeTrackInput struct {
+	UserID  uuid.UUID
+	TrackID uuid.UUID
+}
+
+func (in *LikeTrackInput) Validate() error {
+	if in.UserID == uuid.Nil {
+		return fmt.Errorf("%w: user id is required", ErrInvalidInput)
+	}
+	if in.TrackID == uuid.Nil {
+		return fmt.Errorf("%w: track id is required", ErrInvalidInput)
+	}
+	return nil
+}
+
+type UnlikeTrackInput struct {
+	UserID  uuid.UUID
+	TrackID uuid.UUID
+}
+
+func (in *UnlikeTrackInput) Validate() error {
+	if in.UserID == uuid.Nil {
+		return fmt.Errorf("%w: user id is required", ErrInvalidInput)
+	}
+	if in.TrackID == uuid.Nil {
+		return fmt.Errorf("%w: track id is required", ErrInvalidInput)
+	}
+	return nil
+}

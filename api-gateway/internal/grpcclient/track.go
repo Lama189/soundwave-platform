@@ -176,3 +176,50 @@ func (c *TrackClient) GetTracks(ctx context.Context, trackIDs []uuid.UUID) ([]*T
 
 	return res, nil
 }
+
+func (c *TrackClient) LikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	_, err := c.grpcClient.LikeTrack(ctx, &catalogpb.LikeTrackRequest{
+		TrackId: trackID.String(),
+		UserId:  userID.String(),
+	})
+	return err
+}
+
+func (c *TrackClient) UnlikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	_, err := c.grpcClient.UnlikeTrack(ctx, &catalogpb.UnlikeTrackRequest{
+		TrackId: trackID.String(),
+		UserId:  userID.String(),
+	})
+	return err
+}
+
+func (c *TrackClient) GetLikedTracks(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*TrackResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
+	pbRes, err := c.grpcClient.GetLikedTracks(ctx, &catalogpb.GetLikedTracksRequest{
+		UserId: userID.String(),
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tracks := make([]*TrackResponse, len(pbRes.GetTracks()))
+	for i, t := range pbRes.GetTracks() {
+		tr, err := toTrackResponse(t)
+		if err != nil {
+			return nil, err
+		}
+		tracks[i] = tr
+	}
+
+	return tracks, nil
+}

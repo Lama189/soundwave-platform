@@ -17,6 +17,8 @@ type TrackHandler struct {
 	failProcessing     FailProcessingUseCase
 	getTrackStream     GetTrackStreamUseCase
 	getTrack           GetTrackUseCase
+	likeTrack          LikeTrackUseCase
+	unlikeTrack        UnlikeTrackUseCase
 }
 
 func NewTrackHandler(
@@ -26,6 +28,8 @@ func NewTrackHandler(
 	failProcessing FailProcessingUseCase,
 	getTrackStream GetTrackStreamUseCase,
 	getTrack GetTrackUseCase,
+	likeTrack LikeTrackUseCase,
+	unlikeTrack UnlikeTrackUseCase,
 ) *TrackHandler {
 	return &TrackHandler{
 		uploadTrack:        uploadTrack,
@@ -34,6 +38,8 @@ func NewTrackHandler(
 		failProcessing:     failProcessing,
 		getTrackStream:     getTrackStream,
 		getTrack:           getTrack,
+		likeTrack:          likeTrack,
+		unlikeTrack:        unlikeTrack,
 	}
 }
 
@@ -193,4 +199,54 @@ func (h *TrackHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendJSON(w, http.StatusOK, track)
+}
+
+func (h *TrackHandler) LikeTrack(w http.ResponseWriter, r *http.Request) {
+	userID, ok := UserIDFromContext(r.Context())
+	if !ok {
+		SendError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	trackID, err := uuid.Parse(idStr)
+	if err != nil {
+		SendError(w, http.StatusBadRequest, "invalid track id")
+		return
+	}
+
+	if err := h.likeTrack.Execute(r.Context(), usecaseTrack.LikeTrackInput{
+		UserID:  userID,
+		TrackID: trackID,
+	}); err != nil {
+		HandleGRPCError(w, err)
+		return
+	}
+
+	SendJSON(w, http.StatusOK, map[string]string{"status": "liked"})
+}
+
+func (h *TrackHandler) UnlikeTrack(w http.ResponseWriter, r *http.Request) {
+	userID, ok := UserIDFromContext(r.Context())
+	if !ok {
+		SendError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	trackID, err := uuid.Parse(idStr)
+	if err != nil {
+		SendError(w, http.StatusBadRequest, "invalid track id")
+		return
+	}
+
+	if err := h.unlikeTrack.Execute(r.Context(), usecaseTrack.UnlikeTrackInput{
+		UserID:  userID,
+		TrackID: trackID,
+	}); err != nil {
+		HandleGRPCError(w, err)
+		return
+	}
+
+	SendJSON(w, http.StatusOK, map[string]string{"status": "unliked"})
 }

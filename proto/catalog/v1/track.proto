@@ -14,6 +14,9 @@ service TrackService {
   rpc GetTrack(GetTrackRequest) returns (GetTrackResponse);
   rpc GetTracks(GetTracksRequest) returns (GetTracksResponse);
   rpc GetTrackStream(GetTrackStreamRequest) returns (GetTrackStreamResponse);
+  rpc LikeTrack(LikeTrackRequest) returns (LikeTrackResponse);
+  rpc UnlikeTrack(UnlikeTrackRequest) returns (UnlikeTrackResponse);
+  rpc GetLikedTracks(GetLikedTracksRequest) returns (GetLikedTracksResponse);
 }
 
 message Track {
@@ -100,4 +103,29 @@ message GetTrackStreamResponse {
   bool is_preview = 2;
   google.protobuf.Timestamp expires_at = 3;
 }
+
+message LikeTrackRequest {
+  string track_id = 1;
+  string user_id = 2;
+}
+
+message LikeTrackResponse {}
+
+message UnlikeTrackRequest {
+  string track_id = 1;
+  string user_id = 2;
+}
+
+message UnlikeTrackResponse {}
+
+message GetLikedTracksRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetLikedTracksResponse {
+  repeated Track tracks = 1;
+}
+
 

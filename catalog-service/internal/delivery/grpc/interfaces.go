@@ -26,6 +26,9 @@ type TrackService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*track.TrackOutputDTO, error)
 	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*track.TrackOutputDTO, error)
 	GetTrackStream(ctx context.Context, dto track.GetTrackStreamDTO) (*track.TrackStreamOutputDTO, error)
+	LikeTrack(ctx context.Context, userID, trackID uuid.UUID) error
+	UnlikeTrack(ctx context.Context, userID, trackID uuid.UUID) error
+	GetLikedTracks(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*track.TrackOutputDTO, error)
 }
 
 type AlbumService interface {

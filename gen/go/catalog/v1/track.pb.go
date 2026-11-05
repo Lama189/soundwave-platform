@@ -890,6 +890,286 @@ func (x *GetTrackStreamResponse) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type LikeTrackRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TrackId       string                 `protobuf:"bytes,1,opt,name=track_id,json=trackId,proto3" json:"track_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LikeTrackRequest) Reset() {
+	*x = LikeTrackRequest{}
+	mi := &file_catalog_v1_track_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LikeTrackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LikeTrackRequest) ProtoMessage() {}
+
+func (x *LikeTrackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LikeTrackRequest.ProtoReflect.Descriptor instead.
+func (*LikeTrackRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *LikeTrackRequest) GetTrackId() string {
+	if x != nil {
+		return x.TrackId
+	}
+	return ""
+}
+
+func (x *LikeTrackRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type LikeTrackResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LikeTrackResponse) Reset() {
+	*x = LikeTrackResponse{}
+	mi := &file_catalog_v1_track_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LikeTrackResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LikeTrackResponse) ProtoMessage() {}
+
+func (x *LikeTrackResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LikeTrackResponse.ProtoReflect.Descriptor instead.
+func (*LikeTrackResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{16}
+}
+
+type UnlikeTrackRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TrackId       string                 `protobuf:"bytes,1,opt,name=track_id,json=trackId,proto3" json:"track_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnlikeTrackRequest) Reset() {
+	*x = UnlikeTrackRequest{}
+	mi := &file_catalog_v1_track_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnlikeTrackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnlikeTrackRequest) ProtoMessage() {}
+
+func (x *UnlikeTrackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnlikeTrackRequest.ProtoReflect.Descriptor instead.
+func (*UnlikeTrackRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *UnlikeTrackRequest) GetTrackId() string {
+	if x != nil {
+		return x.TrackId
+	}
+	return ""
+}
+
+func (x *UnlikeTrackRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type UnlikeTrackResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnlikeTrackResponse) Reset() {
+	*x = UnlikeTrackResponse{}
+	mi := &file_catalog_v1_track_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnlikeTrackResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnlikeTrackResponse) ProtoMessage() {}
+
+func (x *UnlikeTrackResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnlikeTrackResponse.ProtoReflect.Descriptor instead.
+func (*UnlikeTrackResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{18}
+}
+
+type GetLikedTracksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLikedTracksRequest) Reset() {
+	*x = GetLikedTracksRequest{}
+	mi := &file_catalog_v1_track_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLikedTracksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLikedTracksRequest) ProtoMessage() {}
+
+func (x *GetLikedTracksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLikedTracksRequest.ProtoReflect.Descriptor instead.
+func (*GetLikedTracksRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetLikedTracksRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetLikedTracksRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetLikedTracksRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type GetLikedTracksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tracks        []*Track               `protobuf:"bytes,1,rep,name=tracks,proto3" json:"tracks,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLikedTracksResponse) Reset() {
+	*x = GetLikedTracksResponse{}
+	mi := &file_catalog_v1_track_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLikedTracksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLikedTracksResponse) ProtoMessage() {}
+
+func (x *GetLikedTracksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_track_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLikedTracksResponse.ProtoReflect.Descriptor instead.
+func (*GetLikedTracksResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_track_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetLikedTracksResponse) GetTracks() []*Track {
+	if x != nil {
+		return x.Tracks
+	}
+	return nil
+}
+
 var File_catalog_v1_track_proto protoreflect.FileDescriptor
 
 const file_catalog_v1_track_proto_rawDesc = "" +
@@ -964,7 +1244,21 @@ const file_catalog_v1_track_proto_rawDesc = "" +
 	"\n" +
 	"is_preview\x18\x02 \x01(\bR\tisPreview\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt2\xdc\x04\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"F\n" +
+	"\x10LikeTrackRequest\x12\x19\n" +
+	"\btrack_id\x18\x01 \x01(\tR\atrackId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\x13\n" +
+	"\x11LikeTrackResponse\"H\n" +
+	"\x12UnlikeTrackRequest\x12\x19\n" +
+	"\btrack_id\x18\x01 \x01(\tR\atrackId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\x15\n" +
+	"\x13UnlikeTrackResponse\"^\n" +
+	"\x15GetLikedTracksRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"C\n" +
+	"\x16GetLikedTracksResponse\x12)\n" +
+	"\x06tracks\x18\x01 \x03(\v2\x11.catalog.v1.TrackR\x06tracks2\xcf\x06\n" +
 	"\fTrackService\x12N\n" +
 	"\vUploadTrack\x12\x1e.catalog.v1.UploadTrackRequest\x1a\x1f.catalog.v1.UploadTrackResponse\x12T\n" +
 	"\rConfirmUpload\x12 .catalog.v1.ConfirmUploadRequest\x1a!.catalog.v1.ConfirmUploadResponse\x12c\n" +
@@ -972,7 +1266,10 @@ const file_catalog_v1_track_proto_rawDesc = "" +
 	"\x0eFailProcessing\x12!.catalog.v1.FailProcessingRequest\x1a\".catalog.v1.FailProcessingResponse\x12E\n" +
 	"\bGetTrack\x12\x1b.catalog.v1.GetTrackRequest\x1a\x1c.catalog.v1.GetTrackResponse\x12H\n" +
 	"\tGetTracks\x12\x1c.catalog.v1.GetTracksRequest\x1a\x1d.catalog.v1.GetTracksResponse\x12W\n" +
-	"\x0eGetTrackStream\x12!.catalog.v1.GetTrackStreamRequest\x1a\".catalog.v1.GetTrackStreamResponseBCZAgithub.com/Lama189/soundwave-platform/gen/go/catalog/v1;catalogpbb\x06proto3"
+	"\x0eGetTrackStream\x12!.catalog.v1.GetTrackStreamRequest\x1a\".catalog.v1.GetTrackStreamResponse\x12H\n" +
+	"\tLikeTrack\x12\x1c.catalog.v1.LikeTrackRequest\x1a\x1d.catalog.v1.LikeTrackResponse\x12N\n" +
+	"\vUnlikeTrack\x12\x1e.catalog.v1.UnlikeTrackRequest\x1a\x1f.catalog.v1.UnlikeTrackResponse\x12W\n" +
+	"\x0eGetLikedTracks\x12!.catalog.v1.GetLikedTracksRequest\x1a\".catalog.v1.GetLikedTracksResponseBCZAgithub.com/Lama189/soundwave-platform/gen/go/catalog/v1;catalogpbb\x06proto3"
 
 var (
 	file_catalog_v1_track_proto_rawDescOnce sync.Once
@@ -986,7 +1283,7 @@ func file_catalog_v1_track_proto_rawDescGZIP() []byte {
 	return file_catalog_v1_track_proto_rawDescData
 }
 
-var file_catalog_v1_track_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_catalog_v1_track_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_catalog_v1_track_proto_goTypes = []any{
 	(*Track)(nil),                      // 0: catalog.v1.Track
 	(*UploadTrackRequest)(nil),         // 1: catalog.v1.UploadTrackRequest
@@ -1003,36 +1300,49 @@ var file_catalog_v1_track_proto_goTypes = []any{
 	(*GetTracksResponse)(nil),          // 12: catalog.v1.GetTracksResponse
 	(*GetTrackStreamRequest)(nil),      // 13: catalog.v1.GetTrackStreamRequest
 	(*GetTrackStreamResponse)(nil),     // 14: catalog.v1.GetTrackStreamResponse
-	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
+	(*LikeTrackRequest)(nil),           // 15: catalog.v1.LikeTrackRequest
+	(*LikeTrackResponse)(nil),          // 16: catalog.v1.LikeTrackResponse
+	(*UnlikeTrackRequest)(nil),         // 17: catalog.v1.UnlikeTrackRequest
+	(*UnlikeTrackResponse)(nil),        // 18: catalog.v1.UnlikeTrackResponse
+	(*GetLikedTracksRequest)(nil),      // 19: catalog.v1.GetLikedTracksRequest
+	(*GetLikedTracksResponse)(nil),     // 20: catalog.v1.GetLikedTracksResponse
+	(*timestamppb.Timestamp)(nil),      // 21: google.protobuf.Timestamp
 }
 var file_catalog_v1_track_proto_depIdxs = []int32{
-	15, // 0: catalog.v1.Track.created_at:type_name -> google.protobuf.Timestamp
-	15, // 1: catalog.v1.Track.updated_at:type_name -> google.protobuf.Timestamp
+	21, // 0: catalog.v1.Track.created_at:type_name -> google.protobuf.Timestamp
+	21, // 1: catalog.v1.Track.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: catalog.v1.UploadTrackResponse.track:type_name -> catalog.v1.Track
 	0,  // 3: catalog.v1.ConfirmUploadResponse.track:type_name -> catalog.v1.Track
 	0,  // 4: catalog.v1.CompleteProcessingResponse.track:type_name -> catalog.v1.Track
 	0,  // 5: catalog.v1.GetTrackResponse.track:type_name -> catalog.v1.Track
 	0,  // 6: catalog.v1.GetTracksResponse.tracks:type_name -> catalog.v1.Track
-	15, // 7: catalog.v1.GetTrackStreamResponse.expires_at:type_name -> google.protobuf.Timestamp
-	1,  // 8: catalog.v1.TrackService.UploadTrack:input_type -> catalog.v1.UploadTrackRequest
-	3,  // 9: catalog.v1.TrackService.ConfirmUpload:input_type -> catalog.v1.ConfirmUploadRequest
-	5,  // 10: catalog.v1.TrackService.CompleteProcessing:input_type -> catalog.v1.CompleteProcessingRequest
-	7,  // 11: catalog.v1.TrackService.FailProcessing:input_type -> catalog.v1.FailProcessingRequest
-	9,  // 12: catalog.v1.TrackService.GetTrack:input_type -> catalog.v1.GetTrackRequest
-	11, // 13: catalog.v1.TrackService.GetTracks:input_type -> catalog.v1.GetTracksRequest
-	13, // 14: catalog.v1.TrackService.GetTrackStream:input_type -> catalog.v1.GetTrackStreamRequest
-	2,  // 15: catalog.v1.TrackService.UploadTrack:output_type -> catalog.v1.UploadTrackResponse
-	4,  // 16: catalog.v1.TrackService.ConfirmUpload:output_type -> catalog.v1.ConfirmUploadResponse
-	6,  // 17: catalog.v1.TrackService.CompleteProcessing:output_type -> catalog.v1.CompleteProcessingResponse
-	8,  // 18: catalog.v1.TrackService.FailProcessing:output_type -> catalog.v1.FailProcessingResponse
-	10, // 19: catalog.v1.TrackService.GetTrack:output_type -> catalog.v1.GetTrackResponse
-	12, // 20: catalog.v1.TrackService.GetTracks:output_type -> catalog.v1.GetTracksResponse
-	14, // 21: catalog.v1.TrackService.GetTrackStream:output_type -> catalog.v1.GetTrackStreamResponse
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	21, // 7: catalog.v1.GetTrackStreamResponse.expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 8: catalog.v1.GetLikedTracksResponse.tracks:type_name -> catalog.v1.Track
+	1,  // 9: catalog.v1.TrackService.UploadTrack:input_type -> catalog.v1.UploadTrackRequest
+	3,  // 10: catalog.v1.TrackService.ConfirmUpload:input_type -> catalog.v1.ConfirmUploadRequest
+	5,  // 11: catalog.v1.TrackService.CompleteProcessing:input_type -> catalog.v1.CompleteProcessingRequest
+	7,  // 12: catalog.v1.TrackService.FailProcessing:input_type -> catalog.v1.FailProcessingRequest
+	9,  // 13: catalog.v1.TrackService.GetTrack:input_type -> catalog.v1.GetTrackRequest
+	11, // 14: catalog.v1.TrackService.GetTracks:input_type -> catalog.v1.GetTracksRequest
+	13, // 15: catalog.v1.TrackService.GetTrackStream:input_type -> catalog.v1.GetTrackStreamRequest
+	15, // 16: catalog.v1.TrackService.LikeTrack:input_type -> catalog.v1.LikeTrackRequest
+	17, // 17: catalog.v1.TrackService.UnlikeTrack:input_type -> catalog.v1.UnlikeTrackRequest
+	19, // 18: catalog.v1.TrackService.GetLikedTracks:input_type -> catalog.v1.GetLikedTracksRequest
+	2,  // 19: catalog.v1.TrackService.UploadTrack:output_type -> catalog.v1.UploadTrackResponse
+	4,  // 20: catalog.v1.TrackService.ConfirmUpload:output_type -> catalog.v1.ConfirmUploadResponse
+	6,  // 21: catalog.v1.TrackService.CompleteProcessing:output_type -> catalog.v1.CompleteProcessingResponse
+	8,  // 22: catalog.v1.TrackService.FailProcessing:output_type -> catalog.v1.FailProcessingResponse
+	10, // 23: catalog.v1.TrackService.GetTrack:output_type -> catalog.v1.GetTrackResponse
+	12, // 24: catalog.v1.TrackService.GetTracks:output_type -> catalog.v1.GetTracksResponse
+	14, // 25: catalog.v1.TrackService.GetTrackStream:output_type -> catalog.v1.GetTrackStreamResponse
+	16, // 26: catalog.v1.TrackService.LikeTrack:output_type -> catalog.v1.LikeTrackResponse
+	18, // 27: catalog.v1.TrackService.UnlikeTrack:output_type -> catalog.v1.UnlikeTrackResponse
+	20, // 28: catalog.v1.TrackService.GetLikedTracks:output_type -> catalog.v1.GetLikedTracksResponse
+	19, // [19:29] is the sub-list for method output_type
+	9,  // [9:19] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_catalog_v1_track_proto_init() }
@@ -1049,7 +1359,7 @@ func file_catalog_v1_track_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_v1_track_proto_rawDesc), len(file_catalog_v1_track_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

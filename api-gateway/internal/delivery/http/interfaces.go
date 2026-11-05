@@ -50,6 +50,14 @@ type GetTrackUseCase interface {
 	Execute(ctx context.Context, input usecaseTrack.GetTrackInput) (*grpcclient.TrackResponse, error)
 }
 
+type LikeTrackUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.LikeTrackInput) error
+}
+
+type UnlikeTrackUseCase interface {
+	Execute(ctx context.Context, input usecaseTrack.UnlikeTrackInput) error
+}
+
 type AlbumClient interface {
 	CreateAlbum(ctx context.Context, req grpcclient.CreateAlbumRequest) (*grpcclient.AlbumResponse, error)
 	GetAlbum(ctx context.Context, albumID uuid.UUID) (*grpcclient.AlbumResponse, error)

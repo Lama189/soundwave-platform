@@ -69,6 +69,8 @@ func NewRouter(
 				r.Use(AuthMiddleware(tokenValidator))
 				r.Post("/upload", trackHandler.UploadTrack)
 				r.Post("/{id}/confirm", trackHandler.ConfirmUpload)
+				r.Post("/{id}/like", trackHandler.LikeTrack)
+				r.Delete("/{id}/like", trackHandler.UnlikeTrack)
 			})
 
 			r.Post("/{id}/complete", trackHandler.CompleteProcessing)

@@ -26,6 +26,9 @@ const (
 	TrackService_GetTrack_FullMethodName           = "/catalog.v1.TrackService/GetTrack"
 	TrackService_GetTracks_FullMethodName          = "/catalog.v1.TrackService/GetTracks"
 	TrackService_GetTrackStream_FullMethodName     = "/catalog.v1.TrackService/GetTrackStream"
+	TrackService_LikeTrack_FullMethodName          = "/catalog.v1.TrackService/LikeTrack"
+	TrackService_UnlikeTrack_FullMethodName        = "/catalog.v1.TrackService/UnlikeTrack"
+	TrackService_GetLikedTracks_FullMethodName     = "/catalog.v1.TrackService/GetLikedTracks"
 )
 
 // TrackServiceClient is the client API for TrackService service.
@@ -39,6 +42,9 @@ type TrackServiceClient interface {
 	GetTrack(ctx context.Context, in *GetTrackRequest, opts ...grpc.CallOption) (*GetTrackResponse, error)
 	GetTracks(ctx context.Context, in *GetTracksRequest, opts ...grpc.CallOption) (*GetTracksResponse, error)
 	GetTrackStream(ctx context.Context, in *GetTrackStreamRequest, opts ...grpc.CallOption) (*GetTrackStreamResponse, error)
+	LikeTrack(ctx context.Context, in *LikeTrackRequest, opts ...grpc.CallOption) (*LikeTrackResponse, error)
+	UnlikeTrack(ctx context.Context, in *UnlikeTrackRequest, opts ...grpc.CallOption) (*UnlikeTrackResponse, error)
+	GetLikedTracks(ctx context.Context, in *GetLikedTracksRequest, opts ...grpc.CallOption) (*GetLikedTracksResponse, error)
 }
 
 type trackServiceClient struct {
@@ -119,6 +125,36 @@ func (c *trackServiceClient) GetTrackStream(ctx context.Context, in *GetTrackStr
 	return out, nil
 }
 
+func (c *trackServiceClient) LikeTrack(ctx context.Context, in *LikeTrackRequest, opts ...grpc.CallOption) (*LikeTrackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LikeTrackResponse)
+	err := c.cc.Invoke(ctx, TrackService_LikeTrack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trackServiceClient) UnlikeTrack(ctx context.Context, in *UnlikeTrackRequest, opts ...grpc.CallOption) (*UnlikeTrackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnlikeTrackResponse)
+	err := c.cc.Invoke(ctx, TrackService_UnlikeTrack_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *trackServiceClient) GetLikedTracks(ctx context.Context, in *GetLikedTracksRequest, opts ...grpc.CallOption) (*GetLikedTracksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLikedTracksResponse)
+	err := c.cc.Invoke(ctx, TrackService_GetLikedTracks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TrackServiceServer is the server API for TrackService service.
 // All implementations must embed UnimplementedTrackServiceServer
 // for forward compatibility.
@@ -130,6 +166,9 @@ type TrackServiceServer interface {
 	GetTrack(context.Context, *GetTrackRequest) (*GetTrackResponse, error)
 	GetTracks(context.Context, *GetTracksRequest) (*GetTracksResponse, error)
 	GetTrackStream(context.Context, *GetTrackStreamRequest) (*GetTrackStreamResponse, error)
+	LikeTrack(context.Context, *LikeTrackRequest) (*LikeTrackResponse, error)
+	UnlikeTrack(context.Context, *UnlikeTrackRequest) (*UnlikeTrackResponse, error)
+	GetLikedTracks(context.Context, *GetLikedTracksRequest) (*GetLikedTracksResponse, error)
 	mustEmbedUnimplementedTrackServiceServer()
 }
 
@@ -160,6 +199,15 @@ func (UnimplementedTrackServiceServer) GetTracks(context.Context, *GetTracksRequ
 }
 func (UnimplementedTrackServiceServer) GetTrackStream(context.Context, *GetTrackStreamRequest) (*GetTrackStreamResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTrackStream not implemented")
+}
+func (UnimplementedTrackServiceServer) LikeTrack(context.Context, *LikeTrackRequest) (*LikeTrackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LikeTrack not implemented")
+}
+func (UnimplementedTrackServiceServer) UnlikeTrack(context.Context, *UnlikeTrackRequest) (*UnlikeTrackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnlikeTrack not implemented")
+}
+func (UnimplementedTrackServiceServer) GetLikedTracks(context.Context, *GetLikedTracksRequest) (*GetLikedTracksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLikedTracks not implemented")
 }
 func (UnimplementedTrackServiceServer) mustEmbedUnimplementedTrackServiceServer() {}
 func (UnimplementedTrackServiceServer) testEmbeddedByValue()                      {}
@@ -308,6 +356,60 @@ func _TrackService_GetTrackStream_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TrackService_LikeTrack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LikeTrackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).LikeTrack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_LikeTrack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).LikeTrack(ctx, req.(*LikeTrackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrackService_UnlikeTrack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnlikeTrackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).UnlikeTrack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_UnlikeTrack_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).UnlikeTrack(ctx, req.(*UnlikeTrackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TrackService_GetLikedTracks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLikedTracksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TrackServiceServer).GetLikedTracks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TrackService_GetLikedTracks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TrackServiceServer).GetLikedTracks(ctx, req.(*GetLikedTracksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TrackService_ServiceDesc is the grpc.ServiceDesc for TrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +444,18 @@ var TrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTrackStream",
 			Handler:    _TrackService_GetTrackStream_Handler,
+		},
+		{
+			MethodName: "LikeTrack",
+			Handler:    _TrackService_LikeTrack_Handler,
+		},
+		{
+			MethodName: "UnlikeTrack",
+			Handler:    _TrackService_UnlikeTrack_Handler,
+		},
+		{
+			MethodName: "GetLikedTracks",
+			Handler:    _TrackService_GetLikedTracks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

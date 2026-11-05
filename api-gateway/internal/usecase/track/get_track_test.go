@@ -38,6 +38,12 @@ func (m *mockGetTrackClient) GetTrack(ctx context.Context, trackID uuid.UUID) (*
 	}
 	return nil, nil
 }
+func (m *mockGetTrackClient) LikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	return nil
+}
+func (m *mockGetTrackClient) UnlikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	return nil
+}
 
 func TestGetTrackInput_Validate(t *testing.T) {
 	validID := uuid.New()

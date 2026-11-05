@@ -42,6 +42,15 @@ func (m *mockTrackService) GetTrackStream(ctx context.Context, dto track.GetTrac
 	}
 	return nil, nil
 }
+func (m *mockTrackService) LikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	return nil
+}
+func (m *mockTrackService) UnlikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	return nil
+}
+func (m *mockTrackService) GetLikedTracks(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*track.TrackOutputDTO, error) {
+	return nil, nil
+}
 
 func TestTrackGRPCServer_GetTrackStream(t *testing.T) {
 	trackID := uuid.New()
@@ -163,4 +172,102 @@ func TestTrackGRPCServer_GetTrackStream(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockLikeTrackService struct {
+	mockTrackService
+	likeTrackFn   func(ctx context.Context, userID, trackID uuid.UUID) error
+	unlikeTrackFn func(ctx context.Context, userID, trackID uuid.UUID) error
+}
+
+func (m *mockLikeTrackService) LikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	if m.likeTrackFn != nil {
+		return m.likeTrackFn(ctx, userID, trackID)
+	}
+	return nil
+}
+
+func (m *mockLikeTrackService) UnlikeTrack(ctx context.Context, userID, trackID uuid.UUID) error {
+	if m.unlikeTrackFn != nil {
+		return m.unlikeTrackFn(ctx, userID, trackID)
+	}
+	return nil
+}
+
+func TestTrackGRPCServer_LikeAndUnlikeTrack(t *testing.T) {
+	trackID := uuid.New()
+	userID := uuid.New()
+
+	t.Run("like track success", func(t *testing.T) {
+		svc := &mockLikeTrackService{
+			likeTrackFn: func(ctx context.Context, u, tr uuid.UUID) error {
+				if u != userID || tr != trackID {
+					t.Errorf("got u=%v, tr=%v", u, tr)
+				}
+				return nil
+			},
+		}
+		server := deliveryGrpc.NewTrackGRPCServer(svc)
+
+		res, err := server.LikeTrack(context.Background(), &catalogpb.LikeTrackRequest{
+			TrackId: trackID.String(),
+			UserId:  userID.String(),
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res == nil {
+			t.Fatal("response should not be nil")
+		}
+	})
+
+	t.Run("like track invalid format", func(t *testing.T) {
+		server := deliveryGrpc.NewTrackGRPCServer(&mockLikeTrackService{})
+		_, err := server.LikeTrack(context.Background(), &catalogpb.LikeTrackRequest{
+			TrackId: "invalid",
+			UserId:  userID.String(),
+		})
+		st, _ := status.FromError(err)
+		if st.Code() != codes.InvalidArgument {
+			t.Errorf("got %v, want InvalidArgument", st.Code())
+		}
+	})
+
+	t.Run("unlike track success", func(t *testing.T) {
+		svc := &mockLikeTrackService{
+			unlikeTrackFn: func(ctx context.Context, u, tr uuid.UUID) error {
+				return nil
+			},
+		}
+		server := deliveryGrpc.NewTrackGRPCServer(svc)
+
+		res, err := server.UnlikeTrack(context.Background(), &catalogpb.UnlikeTrackRequest{
+			TrackId: trackID.String(),
+			UserId:  userID.String(),
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if res == nil {
+			t.Fatal("response should not be nil")
+		}
+	})
+
+	t.Run("unlike track not liked maps to NotFound", func(t *testing.T) {
+		svc := &mockLikeTrackService{
+			unlikeTrackFn: func(ctx context.Context, u, tr uuid.UUID) error {
+				return domain.ErrTrackNotLiked
+			},
+		}
+		server := deliveryGrpc.NewTrackGRPCServer(svc)
+
+		_, err := server.UnlikeTrack(context.Background(), &catalogpb.UnlikeTrackRequest{
+			TrackId: trackID.String(),
+			UserId:  userID.String(),
+		})
+		st, _ := status.FromError(err)
+		if st.Code() != codes.NotFound {
+			t.Errorf("got %v, want NotFound", st.Code())
+		}
+	})
 }

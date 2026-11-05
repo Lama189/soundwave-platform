@@ -80,6 +80,8 @@ func main() {
 	failProcessingUseCase := trackUsecase.NewFailProcessingUseCase(trackSvcClient, log)
 	getTrackStreamUseCase := trackUsecase.NewGetTrackStreamUseCase(trackSvcClient, log)
 	getTrackUseCase := trackUsecase.NewGetTrackUseCase(trackSvcClient, log)
+	likeTrackUseCase := trackUsecase.NewLikeTrackUseCase(trackSvcClient, log)
+	unlikeTrackUseCase := trackUsecase.NewUnlikeTrackUseCase(trackSvcClient, log)
 	createOrderUseCase := orderUsecase.NewCreateOrderUseCase(orderSvcClient, log)
 
 	userHandler := deliveryHttp.NewUserHandler(userSvcClient)
@@ -92,6 +94,8 @@ func main() {
 		failProcessingUseCase,
 		getTrackStreamUseCase,
 		getTrackUseCase,
+		likeTrackUseCase,
+		unlikeTrackUseCase,
 	)
 	orderHandler := deliveryHttp.NewOrderHandler(createOrderUseCase)
 

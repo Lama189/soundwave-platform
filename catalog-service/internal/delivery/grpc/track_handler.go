@@ -198,6 +198,68 @@ func (s *TrackGRPCServer) GetTrackStream(ctx context.Context, req *catalogpb.Get
 	}, nil
 }
 
+func (s *TrackGRPCServer) LikeTrack(ctx context.Context, req *catalogpb.LikeTrackRequest) (*catalogpb.LikeTrackResponse, error) {
+	trackID, err := uuid.Parse(req.GetTrackId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid track id format")
+	}
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user id format")
+	}
+
+	if err := s.service.LikeTrack(ctx, userID, trackID); err != nil {
+		return nil, mapDomainError(err)
+	}
+
+	return &catalogpb.LikeTrackResponse{}, nil
+}
+
+func (s *TrackGRPCServer) UnlikeTrack(ctx context.Context, req *catalogpb.UnlikeTrackRequest) (*catalogpb.UnlikeTrackResponse, error) {
+	trackID, err := uuid.Parse(req.GetTrackId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid track id format")
+	}
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user id format")
+	}
+
+	if err := s.service.UnlikeTrack(ctx, userID, trackID); err != nil {
+		return nil, mapDomainError(err)
+	}
+
+	return &catalogpb.UnlikeTrackResponse{}, nil
+}
+
+func (s *TrackGRPCServer) GetLikedTracks(ctx context.Context, req *catalogpb.GetLikedTracksRequest) (*catalogpb.GetLikedTracksResponse, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user id format")
+	}
+
+	limit := req.GetLimit()
+	if limit <= 0 {
+		limit = 20
+	}
+
+	tracks, err := s.service.GetLikedTracks(ctx, userID, int(limit), int(req.GetOffset()))
+	if err != nil {
+		return nil, mapDomainError(err)
+	}
+
+	pbTracks := make([]*catalogpb.Track, len(tracks))
+	for i, t := range tracks {
+		pbTracks[i] = toProtoTrack(t)
+	}
+
+	return &catalogpb.GetLikedTracksResponse{
+		Tracks: pbTracks,
+	}, nil
+}
+
 func toProtoTrack(t *track.TrackOutputDTO) *catalogpb.Track {
 	if t == nil {
 		return nil
