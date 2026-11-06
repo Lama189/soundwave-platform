@@ -53,7 +53,6 @@ func TestSaga_HappyPath(t *testing.T) {
 	paymentID := uuid.New()
 	stepTimeout := 30 * time.Second
 
-	// 1. Start Fulfillment
 	err := order.StartFulfillment(paymentID, stepTimeout)
 	if err != nil {
 		t.Fatalf("unexpected error on StartFulfillment: %v", err)
@@ -74,7 +73,6 @@ func TestSaga_HappyPath(t *testing.T) {
 		t.Errorf("expected saga to be active")
 	}
 
-	// 2. Grant Entitlements Succeeded -> Move to Settle Billing
 	err = order.OnEntitlementsGranted(stepTimeout)
 	if err != nil {
 		t.Fatalf("unexpected error on OnEntitlementsGranted: %v", err)
@@ -86,7 +84,6 @@ func TestSaga_HappyPath(t *testing.T) {
 		t.Errorf("expected saga step %s, got %s", domain.StepSettleBilling, order.Saga.Step)
 	}
 
-	// 3. Billing Settled -> Complete Fulfillment (Pivot Step)
 	err = order.CompleteFulfillment()
 	if err != nil {
 		t.Fatalf("unexpected error on CompleteFulfillment: %v", err)
@@ -115,7 +112,6 @@ func TestSaga_CatalogFailure_DirectRefund(t *testing.T) {
 
 	_ = order.StartFulfillment(paymentID, stepTimeout)
 
-	// Step 1 fails -> should skip revoke entitlements and go directly to refund
 	failureReason := "catalog db down"
 	err := order.OnEntitlementsGrantFailed(failureReason, stepTimeout)
 	if err != nil {
@@ -131,7 +127,6 @@ func TestSaga_CatalogFailure_DirectRefund(t *testing.T) {
 		t.Errorf("expected failure reason %q, got %v", failureReason, order.Saga.FailureReason)
 	}
 
-	// Refund completed
 	err = order.CompleteCompensation()
 	if err != nil {
 		t.Fatalf("unexpected error on CompleteCompensation: %v", err)
@@ -158,7 +153,6 @@ func TestSaga_BillingFailure_LIFOCompensation(t *testing.T) {
 	_ = order.StartFulfillment(paymentID, stepTimeout)
 	_ = order.OnEntitlementsGranted(stepTimeout)
 
-	// Step 2 fails -> must revoke entitlements first (LIFO)
 	reason := "insufficient platform balance"
 	err := order.OnSettlementFailed(reason, stepTimeout)
 	if err != nil {
@@ -171,7 +165,6 @@ func TestSaga_BillingFailure_LIFOCompensation(t *testing.T) {
 		t.Errorf("expected saga step %s, got %s", domain.StepRevokeEntitlements, order.Saga.Step)
 	}
 
-	// Entitlements revoked -> move to refund payment
 	err = order.OnEntitlementsRevoked(stepTimeout)
 	if err != nil {
 		t.Fatalf("unexpected error on OnEntitlementsRevoked: %v", err)
@@ -180,7 +173,6 @@ func TestSaga_BillingFailure_LIFOCompensation(t *testing.T) {
 		t.Errorf("expected saga step %s, got %s", domain.StepRefundPayment, order.Saga.Step)
 	}
 
-	// Payment refunded -> complete compensation
 	err = order.CompleteCompensation()
 	if err != nil {
 		t.Fatalf("unexpected error on CompleteCompensation: %v", err)
@@ -204,7 +196,6 @@ func TestSaga_HandleTimeout(t *testing.T) {
 	_ = order.StartFulfillment(paymentID, stepTimeout)
 
 	now := time.Now().UTC()
-	// Not timed out yet
 	if order.IsTimedOut(now) {
 		t.Errorf("order should not be timed out yet")
 	}
@@ -213,13 +204,11 @@ func TestSaga_HandleTimeout(t *testing.T) {
 		t.Errorf("expected ErrConflict on non-timed-out order, got %v", err)
 	}
 
-	// Fast-forward past timeout
 	future := now.Add(15 * time.Second)
 	if !order.IsTimedOut(future) {
 		t.Errorf("order should be timed out")
 	}
 
-	// Timeout on StepGrantEntitlements -> should trigger failure and move to StepRefundPayment
 	nextStep, err := order.HandleTimeout(future, stepTimeout)
 	if err != nil {
 		t.Fatalf("unexpected error on HandleTimeout: %v", err)
@@ -235,13 +224,11 @@ func TestSaga_HandleTimeout(t *testing.T) {
 func TestSaga_InvalidTransitions(t *testing.T) {
 	order := createTestOrder(t)
 
-	// Cannot transition before start
 	err := order.OnEntitlementsGranted(10 * time.Second)
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Errorf("expected ErrConflict, got %v", err)
 	}
 
-	// Invalid input to StartFulfillment
 	err = order.StartFulfillment(uuid.Nil, 10*time.Second)
 	if !errors.Is(err, domain.ErrInvalidInput) {
 		t.Errorf("expected ErrInvalidInput for nil payment id, got %v", err)
@@ -251,16 +238,13 @@ func TestSaga_InvalidTransitions(t *testing.T) {
 		t.Errorf("expected ErrInvalidInput for non-positive timeout, got %v", err)
 	}
 
-	// Start properly
 	_ = order.StartFulfillment(uuid.New(), 10*time.Second)
 
-	// Cannot start again
 	err = order.StartFulfillment(uuid.New(), 10*time.Second)
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Errorf("expected ErrConflict when starting already running saga, got %v", err)
 	}
 
-	// Cannot complete before settling
 	err = order.CompleteFulfillment()
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Errorf("expected ErrConflict when completing from GRANT_ENTITLEMENTS, got %v", err)

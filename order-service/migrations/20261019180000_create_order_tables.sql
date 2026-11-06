@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS orders (
     currency VARCHAR(3) NOT NULL,
     payment_id UUID,
     failure_reason TEXT,
+    saga_status VARCHAR(32) NOT NULL DEFAULT 'IDLE',
+    saga_step VARCHAR(64) NOT NULL DEFAULT 'NONE',
+    saga_failure_reason TEXT,
+    step_timeout_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_orders_total_amount_positive CHECK (total_amount > 0)
@@ -16,6 +20,8 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX IF NOT EXISTS idx_orders_buyer_user_id ON orders(buyer_user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_saga_status ON orders(saga_status);
+CREATE INDEX IF NOT EXISTS idx_orders_saga_timeout ON orders(step_timeout_at) WHERE saga_status IN ('PROCESSING', 'COMPENSATING');
 CREATE INDEX IF NOT EXISTS idx_orders_payment_id ON orders(payment_id) WHERE payment_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS order_items (

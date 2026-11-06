@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"time"
 
 	"github.com/Lama189/soundwave-platform/order-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/order-service/internal/uow"
@@ -17,6 +18,7 @@ type OrderRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Order, error)
 	GetByIDForUpdate(ctx context.Context, id uuid.UUID) (*domain.Order, error)
 	GetByBuyerID(ctx context.Context, buyerID uuid.UUID, limit, offset int) ([]*domain.Order, error)
+	GetTimedOut(ctx context.Context, now time.Time, limit int) ([]*domain.Order, error)
 	Update(ctx context.Context, order *domain.Order) error
 }
 

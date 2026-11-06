@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Lama189/soundwave-platform/order-service/internal/domain"
 	"github.com/google/uuid"
@@ -27,10 +28,14 @@ func (r *OrderRepository) Create(ctx context.Context, order *domain.Order) error
 			currency,
 			payment_id,
 			failure_reason,
+			saga_status,
+			saga_step,
+			saga_failure_reason,
+			step_timeout_at,
 			created_at,
 			updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 		);
 	`
 
@@ -44,6 +49,10 @@ func (r *OrderRepository) Create(ctx context.Context, order *domain.Order) error
 		string(order.Currency),
 		order.PaymentID,
 		order.FailureReason,
+		string(order.Saga.Status),
+		string(order.Saga.Step),
+		order.Saga.FailureReason,
+		order.Saga.StepTimeoutAt,
 		order.CreatedAt,
 		order.UpdatedAt,
 	)
@@ -90,6 +99,10 @@ const baseOrderSelectQuery = `
 		currency,
 		payment_id,
 		failure_reason,
+		saga_status,
+		saga_step,
+		saga_failure_reason,
+		step_timeout_at,
 		created_at,
 		updated_at
 	FROM orders
@@ -121,6 +134,10 @@ func (r *OrderRepository) getByID(ctx context.Context, id uuid.UUID, forUpdate b
 		&om.Currency,
 		&om.PaymentID,
 		&om.FailureReason,
+		&om.SagaStatus,
+		&om.SagaStep,
+		&om.SagaFailureReason,
+		&om.StepTimeoutAt,
 		&om.CreatedAt,
 		&om.UpdatedAt,
 	)
@@ -181,6 +198,10 @@ func (r *OrderRepository) GetByBuyerID(ctx context.Context, buyerID uuid.UUID, l
 			currency,
 			payment_id,
 			failure_reason,
+			saga_status,
+			saga_step,
+			saga_failure_reason,
+			step_timeout_at,
 			created_at,
 			updated_at
 		FROM orders
@@ -208,6 +229,10 @@ func (r *OrderRepository) GetByBuyerID(ctx context.Context, buyerID uuid.UUID, l
 			&om.Currency,
 			&om.PaymentID,
 			&om.FailureReason,
+			&om.SagaStatus,
+			&om.SagaStep,
+			&om.SagaFailureReason,
+			&om.StepTimeoutAt,
 			&om.CreatedAt,
 			&om.UpdatedAt,
 		); err != nil {
@@ -284,7 +309,11 @@ func (r *OrderRepository) Update(ctx context.Context, order *domain.Order) error
 			status = $2,
 			payment_id = $3,
 			failure_reason = $4,
-			updated_at = $5
+			saga_status = $5,
+			saga_step = $6,
+			saga_failure_reason = $7,
+			step_timeout_at = $8,
+			updated_at = $9
 		WHERE id = $1;
 	`
 
@@ -295,6 +324,10 @@ func (r *OrderRepository) Update(ctx context.Context, order *domain.Order) error
 		string(order.Status),
 		order.PaymentID,
 		order.FailureReason,
+		string(order.Saga.Status),
+		string(order.Saga.Step),
+		order.Saga.FailureReason,
+		order.Saga.StepTimeoutAt,
 		order.UpdatedAt,
 	)
 	if err != nil {
@@ -306,4 +339,120 @@ func (r *OrderRepository) Update(ctx context.Context, order *domain.Order) error
 	}
 
 	return nil
+}
+
+func (r *OrderRepository) GetTimedOut(ctx context.Context, now time.Time, limit int) ([]*domain.Order, error) {
+	const queryOrders = `
+		SELECT 
+			id,
+			buyer_user_id,
+			status,
+			total_amount,
+			currency,
+			payment_id,
+			failure_reason,
+			saga_status,
+			saga_step,
+			saga_failure_reason,
+			step_timeout_at,
+			created_at,
+			updated_at
+		FROM orders
+		WHERE saga_status IN ('PROCESSING', 'COMPENSATING')
+		  AND step_timeout_at < $1
+		ORDER BY step_timeout_at ASC
+		LIMIT $2
+		FOR UPDATE SKIP LOCKED;
+	`
+
+	rows, err := r.db.Query(ctx, queryOrders, now, limit)
+	if err != nil {
+		return nil, fmt.Errorf("get timed out orders: %w", mapError(err))
+	}
+	defer rows.Close()
+
+	var orderModels []orderModel
+	orderIDs := make([]uuid.UUID, 0)
+
+	for rows.Next() {
+		var om orderModel
+		if err := rows.Scan(
+			&om.ID,
+			&om.BuyerUserID,
+			&om.Status,
+			&om.TotalAmount,
+			&om.Currency,
+			&om.PaymentID,
+			&om.FailureReason,
+			&om.SagaStatus,
+			&om.SagaStep,
+			&om.SagaFailureReason,
+			&om.StepTimeoutAt,
+			&om.CreatedAt,
+			&om.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan timed out order record: %w", err)
+		}
+		orderModels = append(orderModels, om)
+		orderIDs = append(orderIDs, om.ID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate timed out orders: %w", err)
+	}
+
+	if len(orderModels) == 0 {
+		return make([]*domain.Order, 0), nil
+	}
+
+	const queryItems = `
+		SELECT 
+			id,
+			order_id,
+			item_type,
+			item_id,
+			artist_id,
+			price,
+			currency
+		FROM order_items
+		WHERE order_id = ANY($1);
+	`
+
+	itemRows, err := r.db.Query(ctx, queryItems, orderIDs)
+	if err != nil {
+		return nil, fmt.Errorf("get items for timed out orders: %w", mapError(err))
+	}
+	defer itemRows.Close()
+
+	itemsByOrderID := make(map[uuid.UUID][]domain.OrderItem)
+	for itemRows.Next() {
+		var im orderItemModel
+		if err := itemRows.Scan(
+			&im.ID,
+			&im.OrderID,
+			&im.ItemType,
+			&im.ItemID,
+			&im.ArtistID,
+			&im.Price,
+			&im.Currency,
+		); err != nil {
+			return nil, fmt.Errorf("scan order item record: %w", err)
+		}
+		itemsByOrderID[im.OrderID] = append(itemsByOrderID[im.OrderID], im.toDomain())
+	}
+
+	if err := itemRows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate items for timed out orders: %w", err)
+	}
+
+	orders := make([]*domain.Order, 0, len(orderModels))
+	for _, om := range orderModels {
+		items := itemsByOrderID[om.ID]
+		if items == nil {
+			items = make([]domain.OrderItem, 0)
+		}
+		orders = append(orders, om.toDomain(items))
+	}
+
+	return orders, nil
 }
