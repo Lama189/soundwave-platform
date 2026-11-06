@@ -10,12 +10,13 @@ import (
 )
 
 type pgxUnitOfWork struct {
-	tx        pgx.Tx
-	tracks    uow.TrackRepository
-	outbox    uow.OutboxRepository
-	artists   uow.ArtistRepository
-	albums    uow.AlbumRepository
-	purchases uow.UserPurchaseRepository
+	tx                pgx.Tx
+	tracks            uow.TrackRepository
+	outbox            uow.OutboxRepository
+	artists           uow.ArtistRepository
+	albums            uow.AlbumRepository
+	purchases         uow.UserPurchaseRepository
+	processedCommands uow.ProcessedCommandRepository
 }
 
 func newPgxUnitOfWork(tx pgx.Tx) *pgxUnitOfWork {
@@ -55,6 +56,13 @@ func (u *pgxUnitOfWork) Purchases() uow.UserPurchaseRepository {
 		u.purchases = NewUserPurchaseRepository(u.tx)
 	}
 	return u.purchases
+}
+
+func (u *pgxUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository {
+	if u.processedCommands == nil {
+		u.processedCommands = NewProcessedCommandRepository(u.tx)
+	}
+	return u.processedCommands
 }
 
 type UnitOfWorkManager struct {

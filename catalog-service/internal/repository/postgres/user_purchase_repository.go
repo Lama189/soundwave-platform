@@ -19,8 +19,8 @@ func NewUserPurchaseRepository(db DB) *UserPurchaseRepository {
 
 func (r *UserPurchaseRepository) Create(ctx context.Context, purchase *domain.UserPurchase) error {
 	const query = `
-		INSERT INTO user_purchases (id, user_id, order_id, item_type, track_id, album_id, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO user_purchases (id, user_id, order_id, item_type, track_id, album_id, status, revoked_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT DO NOTHING;
 	`
 
@@ -33,6 +33,8 @@ func (r *UserPurchaseRepository) Create(ctx context.Context, purchase *domain.Us
 		string(purchase.ItemType),
 		purchase.TrackID,
 		purchase.AlbumID,
+		string(purchase.Status),
+		purchase.RevokedAt,
 		purchase.CreatedAt,
 	)
 	if err != nil {
@@ -49,18 +51,18 @@ func (r *UserPurchaseRepository) CreateBatch(ctx context.Context, purchases []*d
 
 	var queryBuilder strings.Builder
 	queryBuilder.WriteString(`
-		INSERT INTO user_purchases (id, user_id, order_id, item_type, track_id, album_id, created_at)
+		INSERT INTO user_purchases (id, user_id, order_id, item_type, track_id, album_id, status, revoked_at, created_at)
 		VALUES
 	`)
 
-	args := make([]any, 0, len(purchases)*7)
+	args := make([]any, 0, len(purchases)*9)
 	for i, p := range purchases {
 		if i > 0 {
 			queryBuilder.WriteString(", ")
 		}
-		baseIdx := i * 7
-		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			baseIdx+1, baseIdx+2, baseIdx+3, baseIdx+4, baseIdx+5, baseIdx+6, baseIdx+7,
+		baseIdx := i * 9
+		fmt.Fprintf(&queryBuilder, "($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			baseIdx+1, baseIdx+2, baseIdx+3, baseIdx+4, baseIdx+5, baseIdx+6, baseIdx+7, baseIdx+8, baseIdx+9,
 		)
 		args = append(args,
 			p.ID,
@@ -69,6 +71,8 @@ func (r *UserPurchaseRepository) CreateBatch(ctx context.Context, purchases []*d
 			string(p.ItemType),
 			p.TrackID,
 			p.AlbumID,
+			string(p.Status),
+			p.RevokedAt,
 			p.CreatedAt,
 		)
 	}
@@ -88,7 +92,7 @@ func (r *UserPurchaseRepository) HasPurchasedTrack(ctx context.Context, userID, 
 		SELECT EXISTS (
 			SELECT 1
 			FROM user_purchases
-			WHERE user_id = $1 AND track_id = $2
+			WHERE user_id = $1 AND track_id = $2 AND status = 'ACTIVE'
 		);
 	`
 
@@ -105,7 +109,7 @@ func (r *UserPurchaseRepository) HasPurchasedAlbum(ctx context.Context, userID, 
 		SELECT EXISTS (
 			SELECT 1
 			FROM user_purchases
-			WHERE user_id = $1 AND album_id = $2
+			WHERE user_id = $1 AND album_id = $2 AND status = 'ACTIVE'
 		);
 	`
 
@@ -125,7 +129,7 @@ func (r *UserPurchaseRepository) GetPurchasedTrackIDsIn(ctx context.Context, use
 	const query = `
 		SELECT track_id
 		FROM user_purchases
-		WHERE user_id = $1 AND track_id = ANY($2);
+		WHERE user_id = $1 AND track_id = ANY($2) AND status = 'ACTIVE';
 	`
 
 	rows, err := r.db.Query(ctx, query, userID, trackIDs)
@@ -158,18 +162,18 @@ func (r *UserPurchaseRepository) ListByUserID(ctx context.Context, userID uuid.U
 
 	if itemType != nil {
 		query = `
-			SELECT id, user_id, order_id, item_type, track_id, album_id, created_at
+			SELECT id, user_id, order_id, item_type, track_id, album_id, status, revoked_at, created_at
 			FROM user_purchases
-			WHERE user_id = $1 AND item_type = $2
+			WHERE user_id = $1 AND item_type = $2 AND status = 'ACTIVE'
 			ORDER BY created_at DESC
 			LIMIT $3 OFFSET $4;
 		`
 		args = []any{userID, string(*itemType), limit, offset}
 	} else {
 		query = `
-			SELECT id, user_id, order_id, item_type, track_id, album_id, created_at
+			SELECT id, user_id, order_id, item_type, track_id, album_id, status, revoked_at, created_at
 			FROM user_purchases
-			WHERE user_id = $1
+			WHERE user_id = $1 AND status = 'ACTIVE'
 			ORDER BY created_at DESC
 			LIMIT $2 OFFSET $3;
 		`
@@ -192,6 +196,8 @@ func (r *UserPurchaseRepository) ListByUserID(ctx context.Context, userID uuid.U
 			&m.ItemType,
 			&m.TrackID,
 			&m.AlbumID,
+			&m.Status,
+			&m.RevokedAt,
 			&m.CreatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan user purchase: %w", mapError(err))
@@ -221,4 +227,21 @@ func (r *UserPurchaseRepository) ExistsByOrderID(ctx context.Context, orderID uu
 	}
 
 	return exists, nil
+}
+
+func (r *UserPurchaseRepository) RevokeByOrderID(ctx context.Context, orderID uuid.UUID) error {
+	const query = `
+		UPDATE user_purchases
+		SET
+			status = 'REVOKED',
+			revoked_at = NOW()
+		WHERE order_id = $1 AND status = 'ACTIVE';
+	`
+
+	_, err := r.db.Exec(ctx, query, orderID)
+	if err != nil {
+		return fmt.Errorf("revoke purchases for order %s: %w", orderID, mapError(err))
+	}
+
+	return nil
 }

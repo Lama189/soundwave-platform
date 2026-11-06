@@ -99,27 +99,39 @@ CREATE TABLE IF NOT EXISTS user_purchases (
     item_type VARCHAR(16) NOT NULL,
     track_id UUID REFERENCES tracks(id) ON DELETE RESTRICT,
     album_id UUID REFERENCES albums(id) ON DELETE RESTRICT,
+    status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    revoked_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_user_purchases_item_type CHECK (item_type IN ('track', 'album')),
     CONSTRAINT chk_user_purchases_target CHECK (
         (item_type = 'track' AND track_id IS NOT NULL AND album_id IS NULL) OR
         (item_type = 'album' AND album_id IS NOT NULL AND track_id IS NULL)
-    )
+    ),
+    CONSTRAINT chk_user_purchases_status CHECK (status IN ('ACTIVE', 'REVOKED'))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_purchases_user_track
     ON user_purchases (user_id, track_id)
-    WHERE track_id IS NOT NULL;
+    WHERE track_id IS NOT NULL AND status = 'ACTIVE';
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_purchases_user_album
     ON user_purchases (user_id, album_id)
-    WHERE album_id IS NOT NULL;
+    WHERE album_id IS NOT NULL AND status = 'ACTIVE';
 
 CREATE INDEX IF NOT EXISTS idx_user_purchases_user_id
     ON user_purchases (user_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_user_purchases_order_id
     ON user_purchases (order_id);
+
+CREATE TABLE IF NOT EXISTS processed_commands (
+    command_id UUID PRIMARY KEY,
+    saga_id UUID NOT NULL,
+    command_name VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_processed_commands_saga ON processed_commands(saga_id);
 
 CREATE TABLE IF NOT EXISTS outbox_events (
     id UUID PRIMARY KEY,
@@ -149,6 +161,7 @@ CREATE INDEX IF NOT EXISTS idx_outbox_processed
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE IF EXISTS processed_commands;
 DROP TABLE IF EXISTS outbox_events;
 DROP TABLE IF EXISTS user_purchases;
 DROP TABLE IF EXISTS listening_history;

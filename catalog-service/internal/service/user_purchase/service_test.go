@@ -31,7 +31,8 @@ func (m *mockUnitOfWork) Tracks() uow.TrackRepository           { return m.track
 func (m *mockUnitOfWork) Outbox() uow.OutboxRepository          { return nil }
 func (m *mockUnitOfWork) Artists() uow.ArtistRepository         { return nil }
 func (m *mockUnitOfWork) Albums() uow.AlbumRepository           { return nil }
-func (m *mockUnitOfWork) Purchases() uow.UserPurchaseRepository { return m.purchasesRepo }
+func (m *mockUnitOfWork) Purchases() uow.UserPurchaseRepository                   { return m.purchasesRepo }
+func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository { return nil }
 
 type mockPurchaseRepo struct {
 	existsByOrderFn func(ctx context.Context, orderID uuid.UUID) (bool, error)
@@ -82,6 +83,10 @@ func (m *mockPurchaseRepo) ExistsByOrderID(ctx context.Context, orderID uuid.UUI
 		return m.existsByOrderFn(ctx, orderID)
 	}
 	return false, nil
+}
+
+func (m *mockPurchaseRepo) RevokeByOrderID(ctx context.Context, orderID uuid.UUID) error {
+	return nil
 }
 
 type mockTrackRepo struct {

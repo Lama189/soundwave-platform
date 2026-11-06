@@ -15,6 +15,22 @@ const (
 	ItemTypeAlbum = itemtype.Album
 )
 
+type PurchaseStatus string
+
+const (
+	PurchaseStatusActive  PurchaseStatus = "ACTIVE"
+	PurchaseStatusRevoked PurchaseStatus = "REVOKED"
+)
+
+func (s PurchaseStatus) IsValid() bool {
+	switch s {
+	case PurchaseStatusActive, PurchaseStatusRevoked:
+		return true
+	default:
+		return false
+	}
+}
+
 type UserPurchase struct {
 	ID        uuid.UUID
 	UserID    uuid.UUID
@@ -22,6 +38,8 @@ type UserPurchase struct {
 	ItemType  ItemType
 	TrackID   *uuid.UUID
 	AlbumID   *uuid.UUID
+	Status    PurchaseStatus
+	RevokedAt *time.Time
 	CreatedAt time.Time
 }
 
@@ -35,6 +53,7 @@ func NewUserPurchase(userID, orderID uuid.UUID, itemType ItemType, trackID, albu
 		ItemType:  itemType,
 		TrackID:   trackID,
 		AlbumID:   albumID,
+		Status:    PurchaseStatusActive,
 		CreatedAt: now,
 	}
 
@@ -53,7 +72,7 @@ func NewAlbumPurchase(userID, orderID, albumID uuid.UUID) (*UserPurchase, error)
 	return NewUserPurchase(userID, orderID, ItemTypeAlbum, nil, &albumID)
 }
 
-func RestoreUserPurchase(id, userID, orderID uuid.UUID, itemType ItemType, trackID, albumID *uuid.UUID, createdAt time.Time) *UserPurchase {
+func RestoreUserPurchase(id, userID, orderID uuid.UUID, itemType ItemType, trackID, albumID *uuid.UUID, status PurchaseStatus, revokedAt *time.Time, createdAt time.Time) *UserPurchase {
 	return &UserPurchase{
 		ID:        id,
 		UserID:    userID,
@@ -61,8 +80,20 @@ func RestoreUserPurchase(id, userID, orderID uuid.UUID, itemType ItemType, track
 		ItemType:  itemType,
 		TrackID:   trackID,
 		AlbumID:   albumID,
+		Status:    status,
+		RevokedAt: revokedAt,
 		CreatedAt: createdAt,
 	}
+}
+
+func (p *UserPurchase) Revoke() {
+	if p.Status == PurchaseStatusRevoked {
+		return
+	}
+
+	now := time.Now().UTC()
+	p.Status = PurchaseStatusRevoked
+	p.RevokedAt = &now
 }
 
 func (p *UserPurchase) IsTrack() bool {
@@ -83,12 +114,20 @@ func (p *UserPurchase) ItemID() uuid.UUID {
 	return uuid.Nil
 }
 
+func (p *UserPurchase) IsActive() bool {
+	return p.Status == PurchaseStatusActive
+}
+
 func (p *UserPurchase) Validate() error {
 	if p.UserID == uuid.Nil {
 		return fmt.Errorf("%w: user id is required", ErrInvalidInput)
 	}
 	if p.OrderID == uuid.Nil {
 		return fmt.Errorf("%w: order id is required", ErrInvalidInput)
+	}
+
+	if !p.Status.IsValid() {
+		return fmt.Errorf("%w: invalid purchase status: %s", ErrInvalidInput, p.Status)
 	}
 
 	if !p.ItemType.IsValid() {
