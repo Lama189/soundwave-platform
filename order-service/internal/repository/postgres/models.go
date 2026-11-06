@@ -31,6 +31,7 @@ func (m *orderModel) toDomain(items []domain.OrderItem) *domain.Order {
 		m.FailureReason,
 		m.CreatedAt,
 		m.UpdatedAt,
+		domain.InitialSagaState(),
 	)
 }
 
