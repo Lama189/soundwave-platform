@@ -15,5 +15,6 @@ type TrackService interface {
 }
 
 type UserPurchaseService interface {
-	ProcessPaidOrder(ctx context.Context, input user_purchase.ProcessPaidOrderInput) error
+	ProcessGrantEntitlements(ctx context.Context, input user_purchase.GrantEntitlementsInput) error
+	RevokePurchases(ctx context.Context, input user_purchase.RevokePurchasesInput) error
 }

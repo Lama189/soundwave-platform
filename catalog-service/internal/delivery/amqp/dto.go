@@ -1,8 +1,6 @@
 package amqp
 
 import (
-	"time"
-
 	"github.com/Lama189/soundwave-platform/catalog-service/internal/service/user_purchase"
 	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 	"github.com/google/uuid"
@@ -21,36 +19,49 @@ type TrackProcessingFailedEvent struct {
 	ErrorMessage string    `json:"error_message"`
 }
 
-type OrderPaidItemEvent struct {
+type GrantEntitlementsCommandItem struct {
 	ItemID   uuid.UUID         `json:"item_id"`
 	ItemType itemtype.ItemType `json:"item_type"`
-	ArtistID uuid.UUID         `json:"artist_id"`
-	Price    int64             `json:"price"`
-	Currency string            `json:"currency"`
 }
 
-type OrderPaidEvent struct {
-	OrderID     uuid.UUID            `json:"order_id"`
-	BuyerUserID uuid.UUID            `json:"buyer_user_id"`
-	TotalAmount int64                `json:"total_amount"`
-	Currency    string               `json:"currency"`
-	PaymentID   uuid.UUID            `json:"payment_id"`
-	PaidAt      time.Time            `json:"paid_at"`
-	Items       []OrderPaidItemEvent `json:"items"`
+type GrantEntitlementsCommand struct {
+	CommandID   uuid.UUID                      `json:"command_id"`
+	SagaID      uuid.UUID                      `json:"saga_id"`
+	OrderID     uuid.UUID                      `json:"order_id"`
+	BuyerUserID uuid.UUID                      `json:"buyer_user_id"`
+	Items       []GrantEntitlementsCommandItem `json:"items"`
 }
 
-func (e *OrderPaidEvent) toServiceInput() user_purchase.ProcessPaidOrderInput {
-	items := make([]user_purchase.PaidItemInput, len(e.Items))
-	for i, item := range e.Items {
+func (c *GrantEntitlementsCommand) ToServiceInput() user_purchase.GrantEntitlementsInput {
+	items := make([]user_purchase.PaidItemInput, len(c.Items))
+	for i, item := range c.Items {
 		items[i] = user_purchase.PaidItemInput{
 			ItemID:   item.ItemID,
 			ItemType: item.ItemType,
 		}
 	}
 
-	return user_purchase.ProcessPaidOrderInput{
-		OrderID:     e.OrderID,
-		BuyerUserID: e.BuyerUserID,
+	return user_purchase.GrantEntitlementsInput{
+		CommandID:   c.CommandID,
+		SagaID:      c.SagaID,
+		OrderID:     c.OrderID,
+		BuyerUserID: c.BuyerUserID,
 		Items:       items,
+	}
+}
+
+type RevokeEntitlementsCommand struct {
+	CommandID uuid.UUID `json:"command_id"`
+	SagaID    uuid.UUID `json:"saga_id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	Reason    string    `json:"reason"`
+}
+
+func (c *RevokeEntitlementsCommand) ToServiceInput() user_purchase.RevokePurchasesInput {
+	return user_purchase.RevokePurchasesInput{
+		CommandID: c.CommandID,
+		SagaID:    c.SagaID,
+		OrderID:   c.OrderID,
+		Reason:    c.Reason,
 	}
 }

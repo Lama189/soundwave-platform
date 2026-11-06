@@ -13,18 +13,22 @@ type AggregateType string
 type EventType string
 
 const (
-	AggregateTypeUser  AggregateType = "user"
-	AggregateTypeTrack AggregateType = "track"
+	AggregateTypeUser         AggregateType = "user"
+	AggregateTypeTrack        AggregateType = "track"
+	AggregateTypeUserPurchase AggregateType = "user_purchase"
 )
 
 const (
-	EventTypeTrackUploaded EventType = "track.uploaded"
-	EventTypeTrackReady    EventType = "track.ready"
+	EventTypeTrackUploaded           EventType = "track.uploaded"
+	EventTypeTrackReady              EventType = "track.ready"
+	EventTypeSagaReplyCatalogGranted EventType = "saga.reply.catalog.granted"
+	EventTypeSagaReplyCatalogFailed  EventType = "saga.reply.catalog.failed"
+	EventTypeSagaReplyCatalogRevoked EventType = "saga.reply.catalog.revoked"
 )
 
 func (t AggregateType) IsValid() bool {
 	switch t {
-	case AggregateTypeUser, AggregateTypeTrack:
+	case AggregateTypeUser, AggregateTypeTrack, AggregateTypeUserPurchase:
 		return true
 	default:
 		return false
@@ -33,7 +37,8 @@ func (t AggregateType) IsValid() bool {
 
 func (t EventType) IsValid() bool {
 	switch t {
-	case EventTypeTrackUploaded, EventTypeTrackReady:
+	case EventTypeTrackUploaded, EventTypeTrackReady,
+		EventTypeSagaReplyCatalogGranted, EventTypeSagaReplyCatalogFailed, EventTypeSagaReplyCatalogRevoked:
 		return true
 	default:
 		return false
