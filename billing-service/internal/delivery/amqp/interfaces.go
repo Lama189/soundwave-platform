@@ -7,5 +7,5 @@ import (
 )
 
 type SettlementService interface {
-	ProcessPaidOrder(ctx context.Context, input settlement.ProcessPaidOrderInput) error
+	ProcessSettleOrder(ctx context.Context, input settlement.SettleOrderInput) error
 }

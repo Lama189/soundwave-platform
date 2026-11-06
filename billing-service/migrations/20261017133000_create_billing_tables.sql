@@ -74,10 +74,20 @@ CREATE TABLE IF NOT EXISTS processed_events (
 
 CREATE INDEX IF NOT EXISTS idx_processed_events_type ON processed_events(event_type);
 
+CREATE TABLE IF NOT EXISTS processed_commands (
+    command_id UUID PRIMARY KEY,
+    saga_id UUID NOT NULL,
+    command_name VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_processed_commands_saga ON processed_commands(saga_id);
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE IF EXISTS processed_commands;
 DROP TABLE IF EXISTS processed_events;
 DROP TABLE IF EXISTS outbox_events;
 DROP TABLE IF EXISTS payouts;

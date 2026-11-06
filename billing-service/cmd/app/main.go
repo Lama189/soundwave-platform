@@ -19,6 +19,7 @@ import (
 	"github.com/Lama189/soundwave-platform/billing-service/internal/service/payout"
 	"github.com/Lama189/soundwave-platform/billing-service/internal/service/settlement"
 	"github.com/Lama189/soundwave-platform/billing-service/internal/service/wallet"
+	"github.com/Lama189/soundwave-platform/billing-service/internal/worker"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -79,6 +80,7 @@ func main() {
 	walletRepo := postgres.NewWalletRepository(pgPool)
 	ledgerRepo := postgres.NewLedgerRepository(pgPool)
 	payoutRepo := postgres.NewPayoutRepository(pgPool)
+	outboxRepo := postgres.NewOutboxRepository(pgPool)
 
 	// 5. Domain & Application services
 	settlementService := settlement.NewService(uowManager, cfg.Billing.PlatformFeePercent)
@@ -104,7 +106,13 @@ func main() {
 
 	orderPaidConsumer := deliveryAmqp.NewOrderPaidConsumer(amqpConn, settlementService, logger)
 	if err := orderPaidConsumer.Start(ctx); err != nil {
-		logger.Error("failed to start order.paid consumer", "error", err)
+		logger.Error("failed to start saga order consumer", "error", err)
+		os.Exit(1)
+	}
+
+	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)
+	if err := outboxRelay.Start(ctx); err != nil {
+		logger.Error("failed to start outbox relay", "error", err)
 		os.Exit(1)
 	}
 

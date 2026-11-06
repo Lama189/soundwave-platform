@@ -10,7 +10,7 @@ import (
 	"github.com/Lama189/soundwave-platform/pkg/itemtype"
 )
 
-type OrderPaidItemEvent struct {
+type SettleOrderCommandItem struct {
 	ItemID   uuid.UUID       `json:"item_id"`
 	ItemType string          `json:"item_type"`
 	ArtistID uuid.UUID       `json:"artist_id"`
@@ -18,20 +18,22 @@ type OrderPaidItemEvent struct {
 	Currency domain.Currency `json:"currency"`
 }
 
-type OrderPaidEvent struct {
-	OrderID     uuid.UUID            `json:"order_id"`
-	BuyerUserID uuid.UUID            `json:"buyer_user_id"`
-	TotalAmount int64                `json:"total_amount"`
-	Currency    domain.Currency      `json:"currency"`
-	PaymentID   uuid.UUID            `json:"payment_id"`
-	PaidAt      time.Time            `json:"paid_at"`
-	Items       []OrderPaidItemEvent `json:"items"`
+type SettleOrderCommand struct {
+	CommandID   uuid.UUID                `json:"command_id"`
+	SagaID      uuid.UUID                `json:"saga_id"`
+	OrderID     uuid.UUID                `json:"order_id"`
+	BuyerUserID uuid.UUID                `json:"buyer_user_id"`
+	TotalAmount int64                    `json:"total_amount"`
+	Currency    domain.Currency          `json:"currency"`
+	PaymentID   uuid.UUID                `json:"payment_id"`
+	PaidAt      time.Time                `json:"paid_at"`
+	Items       []SettleOrderCommandItem `json:"items"`
 }
 
-func (e *OrderPaidEvent) toSettlementInput() settlement.ProcessPaidOrderInput {
-	items := make([]settlement.PaidOrderItemInput, len(e.Items))
-	for i, item := range e.Items {
-		items[i] = settlement.PaidOrderItemInput{
+func (c *SettleOrderCommand) ToServiceInput() settlement.SettleOrderInput {
+	items := make([]settlement.SettleOrderItemInput, len(c.Items))
+	for i, item := range c.Items {
+		items[i] = settlement.SettleOrderItemInput{
 			ItemID:   item.ItemID,
 			ItemType: itemtype.ItemType(item.ItemType),
 			ArtistID: item.ArtistID,
@@ -40,13 +42,15 @@ func (e *OrderPaidEvent) toSettlementInput() settlement.ProcessPaidOrderInput {
 		}
 	}
 
-	return settlement.ProcessPaidOrderInput{
-		OrderID:     e.OrderID,
-		BuyerUserID: e.BuyerUserID,
-		TotalAmount: e.TotalAmount,
-		Currency:    e.Currency,
-		PaymentID:   e.PaymentID,
-		PaidAt:      e.PaidAt,
+	return settlement.SettleOrderInput{
+		CommandID:   c.CommandID,
+		SagaID:      c.SagaID,
+		OrderID:     c.OrderID,
+		BuyerUserID: c.BuyerUserID,
+		TotalAmount: c.TotalAmount,
+		Currency:    c.Currency,
+		PaymentID:   c.PaymentID,
+		PaidAt:      c.PaidAt,
 		Items:       items,
 	}
 }

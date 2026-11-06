@@ -3,18 +3,16 @@ package amqp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 
-	"github.com/Lama189/soundwave-platform/billing-service/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 const (
-	OrderEventsExchange     = "order-events"
-	BillingOrderEventsQueue = "billing-order-events"
-	RoutingKeyOrderPaid     = "order.paid"
+	OrderCommandsExchange    = "order.commands"
+	BillingSagaCommandsQueue = "billing-saga-commands"
+	RoutingKeySettleOrder    = "billing.settle_order"
 )
 
 type OrderPaidConsumer struct {
@@ -37,30 +35,30 @@ func (c *OrderPaidConsumer) Start(ctx context.Context) error {
 		return fmt.Errorf("open amqp channel: %w", err)
 	}
 
-	err = ch.ExchangeDeclare(OrderEventsExchange, "topic", true, false, false, false, nil)
+	err = ch.ExchangeDeclare(OrderCommandsExchange, "direct", true, false, false, false, nil)
 	if err != nil {
 		_ = ch.Close()
-		return fmt.Errorf("declare %s exchange: %w", OrderEventsExchange, err)
+		return fmt.Errorf("declare %s exchange: %w", OrderCommandsExchange, err)
 	}
 
-	q, err := ch.QueueDeclare(BillingOrderEventsQueue, true, false, false, false, nil)
+	q, err := ch.QueueDeclare(BillingSagaCommandsQueue, true, false, false, false, nil)
 	if err != nil {
 		_ = ch.Close()
-		return fmt.Errorf("declare %s queue: %w", BillingOrderEventsQueue, err)
+		return fmt.Errorf("declare %s queue: %w", BillingSagaCommandsQueue, err)
 	}
 
-	if err := ch.QueueBind(q.Name, RoutingKeyOrderPaid, OrderEventsExchange, false, nil); err != nil {
+	if err := ch.QueueBind(q.Name, RoutingKeySettleOrder, OrderCommandsExchange, false, nil); err != nil {
 		_ = ch.Close()
-		return fmt.Errorf("bind queue %s to %s with routing key %s: %w", q.Name, OrderEventsExchange, RoutingKeyOrderPaid, err)
+		return fmt.Errorf("bind queue %s to %s with routing key %s: %w", q.Name, OrderCommandsExchange, RoutingKeySettleOrder, err)
 	}
 
-	msgs, err := ch.Consume(q.Name, "billing-order-paid-consumer", false, false, false, false, nil)
+	msgs, err := ch.Consume(q.Name, "billing-saga-consumer", false, false, false, false, nil)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("start consume messages: %w", err)
 	}
 
-	c.logger.Info("started billing order paid amqp consumer", slog.String("queue", q.Name))
+	c.logger.Info("started billing saga command consumer", slog.String("queue", q.Name))
 
 	go func() {
 		defer ch.Close()
@@ -68,11 +66,11 @@ func (c *OrderPaidConsumer) Start(ctx context.Context) error {
 		for {
 			select {
 			case <-ctx.Done():
-				c.logger.Info("stopping billing order paid consumer due to context cancellation")
+				c.logger.Info("stopping billing saga consumer due to context cancellation")
 				return
 			case msg, ok := <-msgs:
 				if !ok {
-					c.logger.Warn("billing order paid consumer amqp channel closed")
+					c.logger.Warn("billing saga consumer amqp channel closed")
 					return
 				}
 				c.handleMessage(ctx, msg)
@@ -84,31 +82,30 @@ func (c *OrderPaidConsumer) Start(ctx context.Context) error {
 }
 
 func (c *OrderPaidConsumer) handleMessage(ctx context.Context, msg amqp.Delivery) {
-	var event OrderPaidEvent
-	if err := json.Unmarshal(msg.Body, &event); err != nil {
-		c.logger.Error("failed to unmarshal order.paid json", slog.String("error", err.Error()))
+	if msg.RoutingKey != RoutingKeySettleOrder {
+		c.logger.Warn("unhandled routing key, acknowledging message", slog.String("routing_key", msg.RoutingKey))
 		_ = msg.Ack(false)
 		return
 	}
 
-	c.logger.Info("received order.paid event",
-		slog.String("order_id", event.OrderID.String()),
-		slog.String("payment_id", event.PaymentID.String()),
-		slog.Int("items_count", len(event.Items)),
-		slog.Int64("total_amount", event.TotalAmount),
+	var cmd SettleOrderCommand
+	if err := json.Unmarshal(msg.Body, &cmd); err != nil {
+		c.logger.Error("failed to unmarshal settle order command", slog.String("error", err.Error()))
+		_ = msg.Ack(false)
+		return
+	}
+
+	c.logger.Info("received settle order command",
+		slog.String("command_id", cmd.CommandID.String()),
+		slog.String("saga_id", cmd.SagaID.String()),
+		slog.String("order_id", cmd.OrderID.String()),
+		slog.Int("items_count", len(cmd.Items)),
 	)
 
-	input := event.toSettlementInput()
-	err := c.settlementService.ProcessPaidOrder(ctx, input)
-	if err != nil {
-		if errors.Is(err, domain.ErrOrderAlreadyProcessed) {
-			c.logger.Warn("order is already settled, skipping duplicate event", slog.String("order_id", event.OrderID.String()))
-			_ = msg.Ack(false)
-			return
-		}
-
-		c.logger.Error("failed to settle paid order via event",
-			slog.String("order_id", event.OrderID.String()),
+	input := cmd.ToServiceInput()
+	if err := c.settlementService.ProcessSettleOrder(ctx, input); err != nil {
+		c.logger.Error("failed to process settle order",
+			slog.String("order_id", cmd.OrderID.String()),
 			slog.String("error", err.Error()),
 		)
 		_ = msg.Nack(false, true)
