@@ -13,6 +13,9 @@ import (
 )
 
 const (
+	DeadLetterExchange = "soundwave.dlx"
+	DeadLetterQueue    = "soundwave.dlq"
+
 	PaymentEventsExchange    = "payment-events"
 	OrderPaymentEventsQueue  = "order-payment-events"
 	RoutingKeyPaymentSuccess = "payment.succeeded"
@@ -39,13 +42,33 @@ func (c *PaymentConsumer) Start(ctx context.Context) error {
 		return fmt.Errorf("open amqp channel: %w", err)
 	}
 
+	err = ch.ExchangeDeclare(DeadLetterExchange, "topic", true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s exchange: %w", DeadLetterExchange, err)
+	}
+
+	dlq, err := ch.QueueDeclare(DeadLetterQueue, true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s queue: %w", DeadLetterQueue, err)
+	}
+
+	if err := ch.QueueBind(dlq.Name, "#", DeadLetterExchange, false, nil); err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("bind dlq %s to %s: %w", dlq.Name, DeadLetterExchange, err)
+	}
+
 	err = ch.ExchangeDeclare(PaymentEventsExchange, "topic", true, false, false, false, nil)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s exchange: %w", PaymentEventsExchange, err)
 	}
 
-	q, err := ch.QueueDeclare(OrderPaymentEventsQueue, true, false, false, false, nil)
+	queueArgs := amqp.Table{
+		"x-dead-letter-exchange": DeadLetterExchange,
+	}
+	q, err := ch.QueueDeclare(OrderPaymentEventsQueue, true, false, false, false, queueArgs)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s queue: %w", OrderPaymentEventsQueue, err)
@@ -95,16 +118,16 @@ func (c *PaymentConsumer) handleMessage(ctx context.Context, msg amqp.Delivery) 
 	case RoutingKeyPaymentFailed:
 		c.handlePaymentFailed(ctx, msg)
 	default:
-		c.logger.Warn("unhandled routing key, acknowledging message", slog.String("routing_key", msg.RoutingKey))
-		_ = msg.Ack(false)
+		c.logger.Warn("unhandled routing key, rejecting to dlq", slog.String("routing_key", msg.RoutingKey))
+		_ = msg.Nack(false, false)
 	}
 }
 
 func (c *PaymentConsumer) handlePaymentSucceeded(ctx context.Context, msg amqp.Delivery) {
 	var event PaymentSucceededEvent
 	if err := json.Unmarshal(msg.Body, &event); err != nil {
-		c.logger.Error("failed to unmarshal payment.succeeded json", slog.String("error", err.Error()))
-		_ = msg.Ack(false)
+		c.logger.Error("failed to unmarshal payment.succeeded json, rejecting to dlq", slog.String("error", err.Error()))
+		_ = msg.Nack(false, false)
 		return
 	}
 
@@ -139,8 +162,8 @@ func (c *PaymentConsumer) handlePaymentSucceeded(ctx context.Context, msg amqp.D
 func (c *PaymentConsumer) handlePaymentFailed(ctx context.Context, msg amqp.Delivery) {
 	var event PaymentFailedEvent
 	if err := json.Unmarshal(msg.Body, &event); err != nil {
-		c.logger.Error("failed to unmarshal payment.failed json", slog.String("error", err.Error()))
-		_ = msg.Ack(false)
+		c.logger.Error("failed to unmarshal payment.failed json, rejecting to dlq", slog.String("error", err.Error()))
+		_ = msg.Nack(false, false)
 		return
 	}
 

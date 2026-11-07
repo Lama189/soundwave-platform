@@ -28,12 +28,14 @@ type mockUnitOfWork struct {
 	processedCommandsRepo uow.ProcessedCommandRepository
 }
 
-func (m *mockUnitOfWork) Wallets() uow.WalletRepository                     { return m.walletRepo }
-func (m *mockUnitOfWork) Ledger() uow.LedgerRepository                       { return m.ledgerRepo }
-func (m *mockUnitOfWork) Payouts() uow.PayoutRepository                     { return nil }
-func (m *mockUnitOfWork) Outbox() uow.OutboxRepository                      { return m.outboxRepo }
-func (m *mockUnitOfWork) ProcessedEvents() uow.ProcessedEventsRepository     { return nil }
-func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository { return m.processedCommandsRepo }
+func (m *mockUnitOfWork) Wallets() uow.WalletRepository                  { return m.walletRepo }
+func (m *mockUnitOfWork) Ledger() uow.LedgerRepository                   { return m.ledgerRepo }
+func (m *mockUnitOfWork) Payouts() uow.PayoutRepository                  { return nil }
+func (m *mockUnitOfWork) Outbox() uow.OutboxRepository                   { return m.outboxRepo }
+func (m *mockUnitOfWork) ProcessedEvents() uow.ProcessedEventsRepository { return nil }
+func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository {
+	return m.processedCommandsRepo
+}
 
 type mockWalletRepo struct {
 	createFn func(ctx context.Context, wallet *domain.Wallet) error

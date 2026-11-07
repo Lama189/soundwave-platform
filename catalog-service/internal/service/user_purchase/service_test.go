@@ -30,12 +30,14 @@ type mockUnitOfWork struct {
 	outboxRepo            uow.OutboxRepository
 }
 
-func (m *mockUnitOfWork) Tracks() uow.TrackRepository                       { return m.tracksRepo }
-func (m *mockUnitOfWork) Outbox() uow.OutboxRepository                      { return m.outboxRepo }
-func (m *mockUnitOfWork) Artists() uow.ArtistRepository                     { return nil }
-func (m *mockUnitOfWork) Albums() uow.AlbumRepository                       { return nil }
-func (m *mockUnitOfWork) Purchases() uow.UserPurchaseRepository             { return m.purchasesRepo }
-func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository { return m.processedCommandsRepo }
+func (m *mockUnitOfWork) Tracks() uow.TrackRepository           { return m.tracksRepo }
+func (m *mockUnitOfWork) Outbox() uow.OutboxRepository          { return m.outboxRepo }
+func (m *mockUnitOfWork) Artists() uow.ArtistRepository         { return nil }
+func (m *mockUnitOfWork) Albums() uow.AlbumRepository           { return nil }
+func (m *mockUnitOfWork) Purchases() uow.UserPurchaseRepository { return m.purchasesRepo }
+func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository {
+	return m.processedCommandsRepo
+}
 
 type mockPurchaseRepo struct {
 	existsByOrderFn func(ctx context.Context, orderID uuid.UUID) (bool, error)

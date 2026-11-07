@@ -10,6 +10,9 @@ import (
 )
 
 const (
+	DeadLetterExchange = "soundwave.dlx"
+	DeadLetterQueue    = "soundwave.dlq"
+
 	OrderCommandsExchange    = "order.commands"
 	BillingSagaCommandsQueue = "billing-saga-commands"
 	RoutingKeySettleOrder    = "billing.settle_order"
@@ -35,13 +38,33 @@ func (c *OrderPaidConsumer) Start(ctx context.Context) error {
 		return fmt.Errorf("open amqp channel: %w", err)
 	}
 
+	err = ch.ExchangeDeclare(DeadLetterExchange, "topic", true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s exchange: %w", DeadLetterExchange, err)
+	}
+
+	dlq, err := ch.QueueDeclare(DeadLetterQueue, true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s queue: %w", DeadLetterQueue, err)
+	}
+
+	if err := ch.QueueBind(dlq.Name, "#", DeadLetterExchange, false, nil); err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("bind dlq %s to %s: %w", dlq.Name, DeadLetterExchange, err)
+	}
+
 	err = ch.ExchangeDeclare(OrderCommandsExchange, "direct", true, false, false, false, nil)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s exchange: %w", OrderCommandsExchange, err)
 	}
 
-	q, err := ch.QueueDeclare(BillingSagaCommandsQueue, true, false, false, false, nil)
+	queueArgs := amqp.Table{
+		"x-dead-letter-exchange": DeadLetterExchange,
+	}
+	q, err := ch.QueueDeclare(BillingSagaCommandsQueue, true, false, false, false, queueArgs)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s queue: %w", BillingSagaCommandsQueue, err)
@@ -83,15 +106,15 @@ func (c *OrderPaidConsumer) Start(ctx context.Context) error {
 
 func (c *OrderPaidConsumer) handleMessage(ctx context.Context, msg amqp.Delivery) {
 	if msg.RoutingKey != RoutingKeySettleOrder {
-		c.logger.Warn("unhandled routing key, acknowledging message", slog.String("routing_key", msg.RoutingKey))
-		_ = msg.Ack(false)
+		c.logger.Warn("unhandled routing key, rejecting to dlq", slog.String("routing_key", msg.RoutingKey))
+		_ = msg.Nack(false, false)
 		return
 	}
 
 	var cmd SettleOrderCommand
 	if err := json.Unmarshal(msg.Body, &cmd); err != nil {
-		c.logger.Error("failed to unmarshal settle order command", slog.String("error", err.Error()))
-		_ = msg.Ack(false)
+		c.logger.Error("failed to unmarshal settle order command, rejecting to dlq", slog.String("error", err.Error()))
+		_ = msg.Nack(false, false)
 		return
 	}
 

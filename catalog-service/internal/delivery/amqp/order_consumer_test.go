@@ -118,11 +118,12 @@ func TestOrderPaidConsumer_HandleGrantEntitlements(t *testing.T) {
 			expectRequeue: true,
 		},
 		{
-			name:       "invalid json triggers ack to discard corrupt message",
-			body:       []byte("{invalid json"),
-			serviceFn:  nil,
-			expectAck:  true,
-			expectNack: false,
+			name:          "invalid json triggers dlq rejection",
+			body:          []byte("{invalid json"),
+			serviceFn:     nil,
+			expectAck:     false,
+			expectNack:    true,
+			expectRequeue: false,
 		},
 	}
 
@@ -202,11 +203,12 @@ func TestOrderPaidConsumer_HandleRevokeEntitlements(t *testing.T) {
 			expectRequeue: true,
 		},
 		{
-			name:       "invalid json triggers ack to discard corrupt message",
-			body:       []byte("{invalid json"),
-			serviceFn:  nil,
-			expectAck:  true,
-			expectNack: false,
+			name:          "invalid json triggers dlq rejection",
+			body:          []byte("{invalid json"),
+			serviceFn:     nil,
+			expectAck:     false,
+			expectNack:    true,
+			expectRequeue: false,
 		},
 	}
 
@@ -252,11 +254,14 @@ func TestOrderPaidConsumer_UnhandledRoutingKey(t *testing.T) {
 
 	consumer.handleMessage(context.Background(), msg)
 
-	if !ack.acked {
-		t.Error("expected unhandled routing key to be acknowledged")
+	if ack.acked {
+		t.Error("expected unhandled routing key not to be acknowledged")
 	}
-	if ack.nacked {
-		t.Error("expected unhandled routing key not to be nacked")
+	if !ack.nacked {
+		t.Error("expected unhandled routing key to be nacked for dlq")
+	}
+	if ack.requeue {
+		t.Error("expected unhandled routing key not to be requeued")
 	}
 }
 

@@ -603,4 +603,3 @@ func (s *Service) recordSettleBillingCmd(ctx context.Context, work uow.UnitOfWor
 
 	return work.Outbox().Record(ctx, event)
 }
-

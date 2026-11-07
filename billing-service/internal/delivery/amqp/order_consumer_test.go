@@ -112,11 +112,12 @@ func TestOrderPaidConsumer_HandleMessage(t *testing.T) {
 			expectNack: false,
 		},
 		{
-			name:       "invalid json triggers ack to discard corrupt message",
-			routingKey: RoutingKeySettleOrder,
-			body:       []byte("invalid-json{"),
-			expectAck:  true,
-			expectNack: false,
+			name:          "invalid json triggers dlq rejection",
+			routingKey:    RoutingKeySettleOrder,
+			body:          []byte("invalid-json{"),
+			expectAck:     false,
+			expectNack:    true,
+			expectRequeue: false,
 		},
 		{
 			name:       "service transient error triggers nack with requeue",
@@ -130,11 +131,12 @@ func TestOrderPaidConsumer_HandleMessage(t *testing.T) {
 			expectRequeue: true,
 		},
 		{
-			name:       "unhandled routing key triggers ack",
-			routingKey: "other.routing.key",
-			body:       validBody,
-			expectAck:  true,
-			expectNack: false,
+			name:          "unhandled routing key triggers dlq rejection",
+			routingKey:    "other.routing.key",
+			body:          validBody,
+			expectAck:     false,
+			expectNack:    true,
+			expectRequeue: false,
 		},
 	}
 

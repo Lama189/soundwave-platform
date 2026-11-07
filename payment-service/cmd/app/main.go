@@ -13,9 +13,9 @@ import (
 
 	paymentpb "github.com/Lama189/soundwave-platform/gen/go/payment/v1"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/config"
+	deliveryAmqp "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/amqp"
 	deliveryGrpc "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/grpc"
 	deliveryHttp "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/http"
-	deliveryAmqp "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/amqp"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/grpcclient"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/infrastructure/adapter/mock"

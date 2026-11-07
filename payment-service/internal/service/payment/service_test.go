@@ -26,10 +26,12 @@ type mockUnitOfWork struct {
 	processedCommandsRepo uow.ProcessedCommandRepository
 }
 
-func (m *mockUnitOfWork) Payments() uow.PaymentRepository                   { return m.paymentRepo }
-func (m *mockUnitOfWork) WebhookEvents() uow.WebhookEventRepository         { return nil }
-func (m *mockUnitOfWork) Outbox() uow.OutboxRepository                      { return m.outboxRepo }
-func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository { return m.processedCommandsRepo }
+func (m *mockUnitOfWork) Payments() uow.PaymentRepository           { return m.paymentRepo }
+func (m *mockUnitOfWork) WebhookEvents() uow.WebhookEventRepository { return nil }
+func (m *mockUnitOfWork) Outbox() uow.OutboxRepository              { return m.outboxRepo }
+func (m *mockUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository {
+	return m.processedCommandsRepo
+}
 
 type mockPaymentRepo struct {
 	getByOrderIDFn func(ctx context.Context, orderID uuid.UUID) (*domain.Payment, error)

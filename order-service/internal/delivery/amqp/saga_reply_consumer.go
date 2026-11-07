@@ -45,13 +45,33 @@ func (c *SagaReplyConsumer) Start(ctx context.Context) error {
 		return fmt.Errorf("open amqp channel: %w", err)
 	}
 
+	err = ch.ExchangeDeclare(DeadLetterExchange, "topic", true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s exchange: %w", DeadLetterExchange, err)
+	}
+
+	dlq, err := ch.QueueDeclare(DeadLetterQueue, true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s queue: %w", DeadLetterQueue, err)
+	}
+
+	if err := ch.QueueBind(dlq.Name, "#", DeadLetterExchange, false, nil); err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("bind dlq %s to %s: %w", dlq.Name, DeadLetterExchange, err)
+	}
+
 	err = ch.ExchangeDeclare(SagaRepliesExchange, "topic", true, false, false, false, nil)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s exchange: %w", SagaRepliesExchange, err)
 	}
 
-	q, err := ch.QueueDeclare(SagaRepliesQueue, true, false, false, false, nil)
+	queueArgs := amqp.Table{
+		"x-dead-letter-exchange": DeadLetterExchange,
+	}
+	q, err := ch.QueueDeclare(SagaRepliesQueue, true, false, false, false, queueArgs)
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s queue: %w", SagaRepliesQueue, err)
@@ -94,11 +114,11 @@ func (c *SagaReplyConsumer) Start(ctx context.Context) error {
 func (c *SagaReplyConsumer) handleMessage(ctx context.Context, msg amqp.Delivery) {
 	var event SagaReplyEvent
 	if err := json.Unmarshal(msg.Body, &event); err != nil {
-		c.logger.Error("failed to unmarshal saga reply json",
+		c.logger.Error("failed to unmarshal saga reply json, sending to dlq",
 			slog.String("routing_key", msg.RoutingKey),
 			slog.String("error", err.Error()),
 		)
-		_ = msg.Ack(false)
+		_ = msg.Nack(false, false)
 		return
 	}
 
@@ -123,15 +143,15 @@ func (c *SagaReplyConsumer) handleMessage(ctx context.Context, msg amqp.Delivery
 	case RoutingKeyPaymentRefunded:
 		err = c.orderService.OnPaymentRefunded(ctx, event.OrderID)
 	case RoutingKeyPaymentRefundFailed:
-		c.logger.Error("saga payment refund reply reported failure",
+		c.logger.Error("saga payment refund reply reported failure, rejecting to dlq for manual intervention",
 			slog.String("order_id", event.OrderID.String()),
 			slog.String("error", event.Error),
 		)
-		_ = msg.Ack(false)
+		_ = msg.Nack(false, false)
 		return
 	default:
-		c.logger.Warn("unhandled saga reply routing key, acknowledging message", slog.String("routing_key", msg.RoutingKey))
-		_ = msg.Ack(false)
+		c.logger.Warn("unhandled saga reply routing key, rejecting to dlq", slog.String("routing_key", msg.RoutingKey))
+		_ = msg.Nack(false, false)
 		return
 	}
 
