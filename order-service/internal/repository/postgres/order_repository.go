@@ -32,10 +32,11 @@ func (r *OrderRepository) Create(ctx context.Context, order *domain.Order) error
 			saga_step,
 			saga_failure_reason,
 			step_timeout_at,
+			step_retries,
 			created_at,
 			updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 		);
 	`
 
@@ -53,6 +54,7 @@ func (r *OrderRepository) Create(ctx context.Context, order *domain.Order) error
 		string(order.Saga.Step),
 		order.Saga.FailureReason,
 		order.Saga.StepTimeoutAt,
+		order.Saga.StepRetries,
 		order.CreatedAt,
 		order.UpdatedAt,
 	)
@@ -103,6 +105,7 @@ const baseOrderSelectQuery = `
 		saga_step,
 		saga_failure_reason,
 		step_timeout_at,
+		step_retries,
 		created_at,
 		updated_at
 	FROM orders
@@ -138,6 +141,7 @@ func (r *OrderRepository) getByID(ctx context.Context, id uuid.UUID, forUpdate b
 		&om.SagaStep,
 		&om.SagaFailureReason,
 		&om.StepTimeoutAt,
+		&om.StepRetries,
 		&om.CreatedAt,
 		&om.UpdatedAt,
 	)
@@ -202,6 +206,7 @@ func (r *OrderRepository) GetByBuyerID(ctx context.Context, buyerID uuid.UUID, l
 			saga_step,
 			saga_failure_reason,
 			step_timeout_at,
+			step_retries,
 			created_at,
 			updated_at
 		FROM orders
@@ -233,6 +238,7 @@ func (r *OrderRepository) GetByBuyerID(ctx context.Context, buyerID uuid.UUID, l
 			&om.SagaStep,
 			&om.SagaFailureReason,
 			&om.StepTimeoutAt,
+			&om.StepRetries,
 			&om.CreatedAt,
 			&om.UpdatedAt,
 		); err != nil {
@@ -313,7 +319,8 @@ func (r *OrderRepository) Update(ctx context.Context, order *domain.Order) error
 			saga_step = $6,
 			saga_failure_reason = $7,
 			step_timeout_at = $8,
-			updated_at = $9
+			step_retries = $9,
+			updated_at = $10
 		WHERE id = $1;
 	`
 
@@ -328,6 +335,7 @@ func (r *OrderRepository) Update(ctx context.Context, order *domain.Order) error
 		string(order.Saga.Step),
 		order.Saga.FailureReason,
 		order.Saga.StepTimeoutAt,
+		order.Saga.StepRetries,
 		order.UpdatedAt,
 	)
 	if err != nil {
@@ -355,6 +363,7 @@ func (r *OrderRepository) GetTimedOut(ctx context.Context, now time.Time, limit 
 			saga_step,
 			saga_failure_reason,
 			step_timeout_at,
+			step_retries,
 			created_at,
 			updated_at
 		FROM orders
@@ -388,6 +397,7 @@ func (r *OrderRepository) GetTimedOut(ctx context.Context, now time.Time, limit 
 			&om.SagaStep,
 			&om.SagaFailureReason,
 			&om.StepTimeoutAt,
+			&om.StepRetries,
 			&om.CreatedAt,
 			&om.UpdatedAt,
 		); err != nil {

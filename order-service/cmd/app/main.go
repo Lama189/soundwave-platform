@@ -64,7 +64,7 @@ func main() {
 
 	catalogClient := grpcclient.NewCatalogClient(catalogConn, cfg.Catalog.Timeout)
 
-	orderService := order.NewService(uowManager, orderRepo, catalogClient, cfg.Saga.StepTimeout)
+	orderService := order.NewService(uowManager, orderRepo, catalogClient, cfg.Saga.StepTimeout, cfg.Saga.MaxStepRetries)
 
 	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)
 	if err := outboxRelay.Start(ctx); err != nil {

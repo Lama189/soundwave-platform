@@ -20,6 +20,7 @@ type Config struct {
 
 type SagaConfig struct {
 	StepTimeout      time.Duration `env:"SAGA_STEP_TIMEOUT" env-default:"30s"`
+	MaxStepRetries   int           `env:"SAGA_MAX_STEP_RETRIES" env-default:"2"`
 	JanitorInterval  time.Duration `env:"SAGA_JANITOR_INTERVAL" env-default:"5s"`
 	JanitorBatchSize int           `env:"SAGA_JANITOR_BATCH_SIZE" env-default:"50"`
 }

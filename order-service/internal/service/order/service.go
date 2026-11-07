@@ -12,22 +12,27 @@ import (
 )
 
 type Service struct {
-	uow         UnitOfWorkManager
-	orders      OrderRepository
-	catalog     CatalogClient
-	stepTimeout time.Duration
+	uow            UnitOfWorkManager
+	orders         OrderRepository
+	catalog        CatalogClient
+	stepTimeout    time.Duration
+	maxStepRetries int
 }
 
-func NewService(uow UnitOfWorkManager, orders OrderRepository, catalog CatalogClient, defaultStepTimeout time.Duration) *Service {
+func NewService(uow UnitOfWorkManager, orders OrderRepository, catalog CatalogClient, defaultStepTimeout time.Duration, maxStepRetries int) *Service {
 	if defaultStepTimeout <= 0 {
 		defaultStepTimeout = 30 * time.Second
 	}
+	if maxStepRetries <= 0 {
+		maxStepRetries = 2
+	}
 
 	return &Service{
-		uow:         uow,
-		orders:      orders,
-		catalog:     catalog,
-		stepTimeout: defaultStepTimeout,
+		uow:            uow,
+		orders:         orders,
+		catalog:        catalog,
+		stepTimeout:    defaultStepTimeout,
+		maxStepRetries: maxStepRetries,
 	}
 }
 
@@ -153,34 +158,8 @@ func (s *Service) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderOutput
 			return fmt.Errorf("update order status: %w", err)
 		}
 
-		items := make([]GrantEntitlementsCommandItem, len(order.Items))
-		for i, it := range order.Items {
-			items[i] = GrantEntitlementsCommandItem{
-				ItemID:   it.ItemID,
-				ItemType: it.ItemType,
-			}
-		}
-
-		cmd := GrantEntitlementsCommand{
-			CommandID:   uuid.New(),
-			SagaID:      order.ID,
-			OrderID:     order.ID,
-			BuyerUserID: order.BuyerUserID,
-			Items:       items,
-		}
-
-		outboxEvent, err := domain.NewEvent(
-			domain.AggregateTypeOrder,
-			order.ID,
-			domain.EventTypeCmdCatalogGrantEntitlements,
-			cmd,
-		)
-		if err != nil {
-			return fmt.Errorf("build catalog command event: %w", err)
-		}
-
-		if err := work.Outbox().Record(ctx, outboxEvent); err != nil {
-			return fmt.Errorf("record outbox event: %w", err)
+		if err := s.recordGrantEntitlementsCmd(ctx, work, order); err != nil {
+			return err
 		}
 
 		updatedOrder = order
@@ -212,40 +191,7 @@ func (s *Service) OnCatalogEntitlementsGranted(ctx context.Context, orderID uuid
 			return fmt.Errorf("updated order: %w", err)
 		}
 
-		items := make([]SettleOrderCommandItem, len(order.Items))
-		for i, it := range order.Items {
-			items[i] = SettleOrderCommandItem{
-				ItemID:   it.ItemID,
-				ItemType: string(it.ItemType),
-				ArtistID: it.ArtistID,
-				Price:    it.Price,
-				Currency: it.Currency,
-			}
-		}
-
-		cmd := SettleOrderCommand{
-			CommandID:   uuid.New(),
-			SagaID:      order.ID,
-			OrderID:     order.ID,
-			BuyerUserID: order.BuyerUserID,
-			TotalAmount: order.TotalAmount,
-			Currency:    order.Currency,
-			PaymentID:   *order.PaymentID,
-			PaidAt:      order.UpdatedAt,
-			Items:       items,
-		}
-
-		event, err := domain.NewEvent(
-			domain.AggregateTypeOrder,
-			order.ID,
-			domain.EventTypeCmdBillingSettleOrder,
-			cmd,
-		)
-		if err != nil {
-			return fmt.Errorf("build billing command event: %w", err)
-		}
-
-		return work.Outbox().Record(ctx, event)
+		return s.recordSettleBillingCmd(ctx, work, order)
 	})
 }
 
@@ -372,7 +318,8 @@ func (s *Service) HandleTimeout(ctx context.Context, orderID uuid.UUID) error {
 			return nil
 		}
 
-		if _, err := order.HandleTimeout(time.Now().UTC(), s.stepTimeout); err != nil {
+		step, isRetry, err := order.HandleTimeout(time.Now().UTC(), s.stepTimeout, s.maxStepRetries)
+		if err != nil {
 			return fmt.Errorf("handle timeout: %w", err)
 		}
 
@@ -380,11 +327,25 @@ func (s *Service) HandleTimeout(ctx context.Context, orderID uuid.UUID) error {
 			return fmt.Errorf("update order: %w", err)
 		}
 
-		switch order.Saga.Step {
+		if isRetry {
+			switch step {
+			case domain.StepGrantEntitlements:
+				return s.recordGrantEntitlementsCmd(ctx, work, order)
+			case domain.StepSettleBilling:
+				return s.recordSettleBillingCmd(ctx, work, order)
+			case domain.StepRevokeEntitlements:
+				return s.recordRevokeEntitlementsCmd(ctx, work, order.ID, "step timeout retry")
+			case domain.StepRefundPayment:
+				return s.recordRefundPaymentCmd(ctx, work, order.ID, "step timeout retry")
+			}
+			return nil
+		}
+
+		switch step {
 		case domain.StepRevokeEntitlements:
-			return s.recordRevokeEntitlementsCmd(ctx, work, order.ID, "step timeout")
+			return s.recordRevokeEntitlementsCmd(ctx, work, order.ID, "step timeout after max retries")
 		case domain.StepRefundPayment:
-			return s.recordRefundPaymentCmd(ctx, work, order.ID, "step timeout")
+			return s.recordRefundPaymentCmd(ctx, work, order.ID, "step timeout after max retries")
 		}
 
 		return nil
@@ -575,3 +536,71 @@ func (s *Service) recordRefundPaymentCmd(ctx context.Context, work uow.UnitOfWor
 
 	return work.Outbox().Record(ctx, event)
 }
+
+func (s *Service) recordGrantEntitlementsCmd(ctx context.Context, work uow.UnitOfWork, order *domain.Order) error {
+	items := make([]GrantEntitlementsCommandItem, len(order.Items))
+	for i, it := range order.Items {
+		items[i] = GrantEntitlementsCommandItem{
+			ItemID:   it.ItemID,
+			ItemType: it.ItemType,
+		}
+	}
+
+	cmd := GrantEntitlementsCommand{
+		CommandID:   uuid.New(),
+		SagaID:      order.ID,
+		OrderID:     order.ID,
+		BuyerUserID: order.BuyerUserID,
+		Items:       items,
+	}
+
+	outboxEvent, err := domain.NewEvent(
+		domain.AggregateTypeOrder,
+		order.ID,
+		domain.EventTypeCmdCatalogGrantEntitlements,
+		cmd,
+	)
+	if err != nil {
+		return fmt.Errorf("build catalog command event: %w", err)
+	}
+
+	return work.Outbox().Record(ctx, outboxEvent)
+}
+
+func (s *Service) recordSettleBillingCmd(ctx context.Context, work uow.UnitOfWork, order *domain.Order) error {
+	items := make([]SettleOrderCommandItem, len(order.Items))
+	for i, it := range order.Items {
+		items[i] = SettleOrderCommandItem{
+			ItemID:   it.ItemID,
+			ItemType: string(it.ItemType),
+			ArtistID: it.ArtistID,
+			Price:    it.Price,
+			Currency: it.Currency,
+		}
+	}
+
+	cmd := SettleOrderCommand{
+		CommandID:   uuid.New(),
+		SagaID:      order.ID,
+		OrderID:     order.ID,
+		BuyerUserID: order.BuyerUserID,
+		TotalAmount: order.TotalAmount,
+		Currency:    order.Currency,
+		PaymentID:   *order.PaymentID,
+		PaidAt:      order.UpdatedAt,
+		Items:       items,
+	}
+
+	event, err := domain.NewEvent(
+		domain.AggregateTypeOrder,
+		order.ID,
+		domain.EventTypeCmdBillingSettleOrder,
+		cmd,
+	)
+	if err != nil {
+		return fmt.Errorf("build billing command event: %w", err)
+	}
+
+	return work.Outbox().Record(ctx, event)
+}
+

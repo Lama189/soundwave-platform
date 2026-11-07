@@ -188,10 +188,11 @@ func TestSaga_BillingFailure_LIFOCompensation(t *testing.T) {
 	}
 }
 
-func TestSaga_HandleTimeout(t *testing.T) {
+func TestSaga_HandleTimeout_WithRetries(t *testing.T) {
 	order := createTestOrder(t)
 	paymentID := uuid.New()
 	stepTimeout := 10 * time.Second
+	maxRetries := 2
 
 	_ = order.StartFulfillment(paymentID, stepTimeout)
 
@@ -199,19 +200,70 @@ func TestSaga_HandleTimeout(t *testing.T) {
 	if order.IsTimedOut(now) {
 		t.Errorf("order should not be timed out yet")
 	}
-	_, err := order.HandleTimeout(now, stepTimeout)
+	_, _, err := order.HandleTimeout(now, stepTimeout, maxRetries)
 	if !errors.Is(err, domain.ErrConflict) {
 		t.Errorf("expected ErrConflict on non-timed-out order, got %v", err)
 	}
 
-	future := now.Add(15 * time.Second)
-	if !order.IsTimedOut(future) {
-		t.Errorf("order should be timed out")
+	future1 := now.Add(15 * time.Second)
+	nextStep, isRetry, err := order.HandleTimeout(future1, stepTimeout, maxRetries)
+	if err != nil {
+		t.Fatalf("unexpected error on retry 1: %v", err)
+	}
+	if !isRetry || nextStep != domain.StepGrantEntitlements {
+		t.Fatalf("expected retry 1 of grant entitlements, got step=%s isRetry=%v", nextStep, isRetry)
+	}
+	if order.Saga.StepRetries != 1 {
+		t.Fatalf("expected step retries 1, got %d", order.Saga.StepRetries)
+	}
+	if order.Saga.Status != domain.SagaStatusProcessing {
+		t.Fatalf("expected status still processing, got %s", order.Saga.Status)
 	}
 
-	nextStep, err := order.HandleTimeout(future, stepTimeout)
+	future2 := future1.Add(15 * time.Second)
+	nextStep, isRetry, err = order.HandleTimeout(future2, stepTimeout, maxRetries)
+	if err != nil {
+		t.Fatalf("unexpected error on retry 2: %v", err)
+	}
+	if !isRetry || nextStep != domain.StepGrantEntitlements {
+		t.Fatalf("expected retry 2 of grant entitlements, got step=%s isRetry=%v", nextStep, isRetry)
+	}
+	if order.Saga.StepRetries != 2 {
+		t.Fatalf("expected step retries 2, got %d", order.Saga.StepRetries)
+	}
+
+	future3 := future2.Add(15 * time.Second)
+	nextStep, isRetry, err = order.HandleTimeout(future3, stepTimeout, maxRetries)
+	if err != nil {
+		t.Fatalf("unexpected error on retries exhausted: %v", err)
+	}
+	if isRetry {
+		t.Fatalf("expected retries to be exhausted")
+	}
+	if nextStep != domain.StepRefundPayment {
+		t.Fatalf("expected next step refund payment, got %s", nextStep)
+	}
+	if order.Saga.Status != domain.SagaStatusCompensating {
+		t.Fatalf("expected compensating status, got %s", order.Saga.Status)
+	}
+}
+
+func TestSaga_HandleTimeout_ZeroRetries(t *testing.T) {
+	order := createTestOrder(t)
+	paymentID := uuid.New()
+	stepTimeout := 10 * time.Second
+
+	_ = order.StartFulfillment(paymentID, stepTimeout)
+
+	now := time.Now().UTC()
+	future := now.Add(15 * time.Second)
+
+	nextStep, isRetry, err := order.HandleTimeout(future, stepTimeout, 0)
 	if err != nil {
 		t.Fatalf("unexpected error on HandleTimeout: %v", err)
+	}
+	if isRetry {
+		t.Fatalf("expected isRetry false with 0 max retries")
 	}
 	if nextStep != domain.StepRefundPayment {
 		t.Errorf("expected next step %s, got %s", domain.StepRefundPayment, nextStep)

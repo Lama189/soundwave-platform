@@ -50,6 +50,7 @@ func (s SagaStep) IsValid() bool {
 type SagaState struct {
 	Status        SagaStatus
 	Step          SagaStep
+	StepRetries   int
 	FailureReason *string
 	StepTimeoutAt *time.Time
 	UpdatedAt     time.Time
@@ -57,9 +58,10 @@ type SagaState struct {
 
 func InitialSagaState() SagaState {
 	return SagaState{
-		Status:    SagaStatusIdle,
-		Step:      StepNone,
-		UpdatedAt: time.Now().UTC(),
+		Status:      SagaStatusIdle,
+		Step:        StepNone,
+		StepRetries: 0,
+		UpdatedAt:   time.Now().UTC(),
 	}
 }
 
@@ -87,6 +89,7 @@ func (o *Order) StartFulfillment(paymentID uuid.UUID, timeout time.Duration) err
 	o.Status = OrderStatusProcessing
 	o.Saga.Status = SagaStatusProcessing
 	o.Saga.Step = StepGrantEntitlements
+	o.Saga.StepRetries = 0
 	o.Saga.StepTimeoutAt = &timeoutAt
 	o.Saga.UpdatedAt = now
 	o.UpdatedAt = now
@@ -110,6 +113,7 @@ func (o *Order) OnEntitlementsGranted(timeout time.Duration) error {
 	timeoutAt := now.Add(timeout)
 
 	o.Saga.Step = StepSettleBilling
+	o.Saga.StepRetries = 0
 	o.Saga.StepTimeoutAt = &timeoutAt
 	o.Saga.UpdatedAt = now
 	o.UpdatedAt = now
@@ -155,6 +159,8 @@ func (o *Order) OnEntitlementsGrantFailed(reason string, timeout time.Duration) 
 
 	o.Saga.Status = SagaStatusCompensating
 	o.Saga.Step = StepRefundPayment
+	o.Saga.StepRetries = 0
+	o.Saga.StepRetries = 0
 	if reason != "" {
 		o.Saga.FailureReason = &reason
 	}
@@ -183,6 +189,7 @@ func (o *Order) OnSettlementFailed(reason string, timeout time.Duration) error {
 
 	o.Saga.Status = SagaStatusCompensating
 	o.Saga.Step = StepRevokeEntitlements
+	o.Saga.StepRetries = 0
 	if reason != "" {
 		o.Saga.FailureReason = &reason
 	}
@@ -210,6 +217,7 @@ func (o *Order) OnEntitlementsRevoked(timeout time.Duration) error {
 	timeoutAt := now.Add(timeout)
 
 	o.Saga.Step = StepRefundPayment
+	o.Saga.StepRetries = 0
 	o.Saga.StepTimeoutAt = &timeoutAt
 	o.Saga.UpdatedAt = now
 	o.UpdatedAt = now
@@ -251,40 +259,54 @@ func (o *Order) IsTimedOut(now time.Time) bool {
 	return now.After(*o.Saga.StepTimeoutAt)
 }
 
-func (o *Order) HandleTimeout(now time.Time, nextTimeout time.Duration) (SagaStep, error) {
+func (o *Order) HandleTimeout(now time.Time, nextTimeout time.Duration, maxRetries int) (SagaStep, bool, error) {
 	if !o.IsTimedOut(now) {
-		return o.Saga.Step, fmt.Errorf("%w: order %s is not timed out", ErrConflict, o.ID)
+		return o.Saga.Step, false, fmt.Errorf("%w: order %s is not timed out", ErrConflict, o.ID)
 	}
 
-	switch o.Saga.Step {
-	case StepGrantEntitlements:
-		if err := o.OnEntitlementsGrantFailed("catalog step timeout", nextTimeout); err != nil {
-			return o.Saga.Step, err
-		}
-		return StepRefundPayment, nil
-
-	case StepSettleBilling:
-		if err := o.OnSettlementFailed("billing step timeout", nextTimeout); err != nil {
-			return o.Saga.Step, err
-		}
-		return StepRevokeEntitlements, nil
-
-	case StepRevokeEntitlements:
-		if err := o.OnEntitlementsRevoked(nextTimeout); err != nil {
-			return o.Saga.Step, err
-		}
-		return StepRefundPayment, nil
-
-	case StepRefundPayment:
+	if o.Saga.StepRetries < maxRetries {
+		o.Saga.StepRetries++
 		timeoutAt := now.Add(nextTimeout)
 		o.Saga.StepTimeoutAt = &timeoutAt
 		o.Saga.UpdatedAt = now
 		o.UpdatedAt = now
-		return StepRefundPayment, nil
+		return o.Saga.Step, true, nil
+	}
+
+	o.Saga.StepRetries = 0
+
+	switch o.Saga.Step {
+	case StepGrantEntitlements:
+		if err := o.OnEntitlementsGrantFailed("catalog step timeout after retries", nextTimeout); err != nil {
+			return o.Saga.Step, false, err
+		}
+		return StepRefundPayment, false, nil
+
+	case StepSettleBilling:
+		if err := o.OnSettlementFailed("billing step timeout after retries", nextTimeout); err != nil {
+			return o.Saga.Step, false, err
+		}
+		return StepRevokeEntitlements, false, nil
+
+	case StepRevokeEntitlements:
+		if err := o.OnEntitlementsRevoked(nextTimeout); err != nil {
+			return o.Saga.Step, false, err
+		}
+		return StepRefundPayment, false, nil
+
+	case StepRefundPayment:
+		reason := "refund payment timeout after max retries, requires manual intervention"
+		o.Saga.Status = SagaStatusFailed
+		o.Saga.Step = StepFailed
+		o.Status = OrderStatusCancelled
+		o.Saga.FailureReason = &reason
+		o.Saga.StepTimeoutAt = nil
+		o.Saga.UpdatedAt = now
+		o.UpdatedAt = now
+		return StepFailed, false, nil
 
 	default:
-		return o.Saga.Step, fmt.Errorf("%w: unhandled timeout for saga step %s", ErrConflict, o.Saga.Step)
-
+		return o.Saga.Step, false, fmt.Errorf("%w: unhandled timeout for saga step %s", ErrConflict, o.Saga.Step)
 	}
 }
 

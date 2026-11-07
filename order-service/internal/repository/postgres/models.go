@@ -19,6 +19,7 @@ type orderModel struct {
 	SagaStep          string     `db:"saga_step"`
 	SagaFailureReason *string    `db:"saga_failure_reason"`
 	StepTimeoutAt     *time.Time `db:"step_timeout_at"`
+	StepRetries       int        `db:"step_retries"`
 	CreatedAt         time.Time  `db:"created_at"`
 	UpdatedAt         time.Time  `db:"updated_at"`
 }
@@ -27,6 +28,7 @@ func (m *orderModel) toDomain(items []domain.OrderItem) *domain.Order {
 	saga := domain.SagaState{
 		Status:        domain.SagaStatus(m.SagaStatus),
 		Step:          domain.SagaStep(m.SagaStep),
+		StepRetries:   m.StepRetries,
 		FailureReason: m.SagaFailureReason,
 		StepTimeoutAt: m.StepTimeoutAt,
 		UpdatedAt:     m.UpdatedAt,
