@@ -76,6 +76,16 @@ func main() {
 		log.Fatalf("failed to start payment consumer: %v", err)
 	}
 
+	sagaReplyConsumer := deliveryAmqp.NewSagaReplyConsumer(amqpConn, orderService, logger)
+	if err := sagaReplyConsumer.Start(ctx); err != nil {
+		log.Fatalf("failed to start saga reply consumer: %v", err)
+	}
+
+	sagaJanitor := worker.NewSagaJanitor(orderRepo, orderService, logger, cfg.Saga)
+	if err := sagaJanitor.Start(ctx); err != nil {
+		log.Fatalf("failed to start saga janitor: %v", err)
+	}
+
 	grpcServer := grpc.NewServer()
 	orderGrpcHandler := deliveryGrpc.NewOrderGRPCServer(orderService)
 	orderpb.RegisterOrderServiceServer(grpcServer, orderGrpcHandler)
