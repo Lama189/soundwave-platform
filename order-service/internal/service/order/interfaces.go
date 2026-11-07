@@ -22,10 +22,6 @@ type OrderRepository interface {
 	Update(ctx context.Context, order *domain.Order) error
 }
 
-type OutboxRepository interface {
-	Record(ctx context.Context, event *domain.Event) error
-}
-
 type CatalogItemInfo struct {
 	ID       uuid.UUID
 	ArtistID uuid.UUID

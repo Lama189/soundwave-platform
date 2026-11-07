@@ -15,6 +15,11 @@ type Config struct {
 	RabbitMQ RabbitMQConfig
 	Relay    RelayConfig
 	Catalog  CatalogConfig
+	Saga     SagaConfig
+}
+
+type SagaConfig struct {
+	StepTimeout time.Duration `env:"SAGA_STEP_TIMEOUT" env-default:"30s"`
 }
 
 type CatalogConfig struct {

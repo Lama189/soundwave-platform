@@ -16,10 +16,12 @@ const (
 )
 
 const (
-	EventTypeOrderCreated   EventType = "order.created"
-	EventTypeOrderPaid      EventType = "order.paid"
-	EventTypeOrderFailed    EventType = "order.failed"
-	EventTypeOrderCancelled EventType = "order.cancelled"
+	EventTypeOrderFailed EventType = "order.failed"
+
+	EventTypeCmdCatalogGrantEntitlements  EventType = "catalog.grant_entitlements"
+	EventTypeCmdCatalogRevokeEntitlements EventType = "catalog.revoke_entitlements"
+	EventTypeCmdBillingSettleOrder        EventType = "billing.settle_order"
+	EventTypeCmdPaymentRefund             EventType = "payment.refund"
 )
 
 func (t AggregateType) IsValid() bool {
@@ -33,7 +35,11 @@ func (t AggregateType) IsValid() bool {
 
 func (t EventType) IsValid() bool {
 	switch t {
-	case EventTypeOrderCreated, EventTypeOrderPaid, EventTypeOrderFailed, EventTypeOrderCancelled:
+	case EventTypeOrderFailed,
+		EventTypeCmdCatalogGrantEntitlements,
+		EventTypeCmdCatalogRevokeEntitlements,
+		EventTypeCmdBillingSettleOrder,
+		EventTypeCmdPaymentRefund:
 		return true
 	default:
 		return false
