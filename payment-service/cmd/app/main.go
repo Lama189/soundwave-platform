@@ -15,6 +15,7 @@ import (
 	"github.com/Lama189/soundwave-platform/payment-service/internal/config"
 	deliveryGrpc "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/grpc"
 	deliveryHttp "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/http"
+	deliveryAmqp "github.com/Lama189/soundwave-platform/payment-service/internal/delivery/amqp"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/domain"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/grpcclient"
 	"github.com/Lama189/soundwave-platform/payment-service/internal/infrastructure/adapter/mock"
@@ -92,6 +93,13 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("outbox relay worker started successfully")
+
+	orderCommandConsumer := deliveryAmqp.NewOrderCommandConsumer(amqpConn, paymentService, logger)
+	if err := orderCommandConsumer.Start(ctx); err != nil {
+		logger.Error("failed to start payment saga command consumer", "error", err)
+		os.Exit(1)
+	}
+	logger.Info("payment saga command consumer started successfully")
 
 	grpcServer := grpc.NewServer()
 	paymentGrpcHandler := deliveryGrpc.NewPaymentGRPCServer(paymentService)

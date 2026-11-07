@@ -11,6 +11,7 @@ type UnitOfWork interface {
 	Payments() PaymentRepository
 	WebhookEvents() WebhookEventRepository
 	Outbox() OutboxRepository
+	ProcessedCommands() ProcessedCommandRepository
 }
 
 type Manager interface {
@@ -38,4 +39,9 @@ type WebhookEventRepository interface {
 	GetByProviderAndExternalID(ctx context.Context, provider domain.PaymentProvider, externalEventID string) (*domain.WebhookEvent, error)
 	GetByProviderAndExternalIDForUpdate(ctx context.Context, provider domain.PaymentProvider, externalEventID string) (*domain.WebhookEvent, error)
 	Update(ctx context.Context, event *domain.WebhookEvent) error
+}
+
+type ProcessedCommandRepository interface {
+	HasBeenProcessed(ctx context.Context, commandID uuid.UUID) (bool, error)
+	MarkProcessed(ctx context.Context, commandID, sagaID uuid.UUID, commandName string) error
 }

@@ -307,3 +307,63 @@ func (s *Service) GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*
 
 	return toPaymentOutput(payment), nil
 }
+
+func (s *Service) ProcessRefundCommand(ctx context.Context, input RefundCommandInput) error {
+	if err := input.Validate(); err != nil {
+		return err
+	}
+
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		alreadyProcessed, err := work.ProcessedCommands().HasBeenProcessed(ctx, input.CommandID)
+		if err != nil {
+			return fmt.Errorf("check inbox: %w", err)
+		}
+		if alreadyProcessed {
+			return nil
+		}
+
+		payment, err := work.Payments().GetByOrderID(ctx, input.OrderID)
+		if err != nil {
+			if errors.Is(err, domain.ErrNotFound) {
+				return fmt.Errorf("%w: payment for order %s not found", domain.ErrNotFound, input.OrderID)
+			}
+			return fmt.Errorf("get payment by order id %s: %w", input.OrderID, err)
+		}
+
+		if payment.Status != domain.PaymentStatusRefunded {
+			if err := payment.MarkRefunded(); err != nil {
+				return fmt.Errorf("mark payment refunded: %w", err)
+			}
+			if err := work.Payments().Update(ctx, payment); err != nil {
+				return fmt.Errorf("update payment status: %w", err)
+			}
+		}
+
+		replyPayload := domain.PaymentSagaReplyPayload{
+			CommandID: input.CommandID,
+			SagaID:    input.SagaID,
+			OrderID:   input.OrderID,
+			Success:   true,
+		}
+
+		replyEvent, err := domain.NewEvent(
+			domain.AggregateTypePayment,
+			payment.ID,
+			domain.EventTypeSagaReplyPaymentRefunded,
+			replyPayload,
+		)
+		if err != nil {
+			return fmt.Errorf("create outbox reply event: %w", err)
+		}
+
+		if err := work.Outbox().Record(ctx, replyEvent); err != nil {
+			return fmt.Errorf("record outbox reply: %w", err)
+		}
+
+		if err := work.ProcessedCommands().MarkProcessed(ctx, input.CommandID, input.SagaID, "payment.refund"); err != nil {
+			return fmt.Errorf("mark command in inbox: %w", err)
+		}
+
+		return nil
+	})
+}

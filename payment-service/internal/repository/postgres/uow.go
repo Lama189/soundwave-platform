@@ -10,10 +10,11 @@ import (
 )
 
 type pgxUnitOfWork struct {
-	tx            pgx.Tx
-	payments      uow.PaymentRepository
-	webhookEvents uow.WebhookEventRepository
-	outbox        uow.OutboxRepository
+	tx                pgx.Tx
+	payments          uow.PaymentRepository
+	webhookEvents     uow.WebhookEventRepository
+	outbox            uow.OutboxRepository
+	processedCommands uow.ProcessedCommandRepository
 }
 
 func newPgxUnitOfWork(tx pgx.Tx) *pgxUnitOfWork {
@@ -39,6 +40,13 @@ func (u *pgxUnitOfWork) Outbox() uow.OutboxRepository {
 		u.outbox = NewOutboxRepository(u.tx)
 	}
 	return u.outbox
+}
+
+func (u *pgxUnitOfWork) ProcessedCommands() uow.ProcessedCommandRepository {
+	if u.processedCommands == nil {
+		u.processedCommands = NewProcessedCommandRepository(u.tx)
+	}
+	return u.processedCommands
 }
 
 type UnitOfWorkManager struct {
