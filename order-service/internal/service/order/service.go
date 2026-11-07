@@ -11,21 +11,32 @@ import (
 	"github.com/google/uuid"
 )
 
-type OrderService struct {
-	uow     UnitOfWorkManager
-	orders  OrderRepository
-	catalog CatalogClient
+type Service struct {
+	uow            UnitOfWorkManager
+	orders         OrderRepository
+	catalog        CatalogClient
+	stepTimeout    time.Duration
+	maxStepRetries int
 }
 
-func NewOrderService(uow UnitOfWorkManager, orders OrderRepository, catalog CatalogClient) *OrderService {
-	return &OrderService{
-		uow:     uow,
-		orders:  orders,
-		catalog: catalog,
+func NewService(uow UnitOfWorkManager, orders OrderRepository, catalog CatalogClient, defaultStepTimeout time.Duration, maxStepRetries int) *Service {
+	if defaultStepTimeout <= 0 {
+		defaultStepTimeout = 30 * time.Second
+	}
+	if maxStepRetries <= 0 {
+		maxStepRetries = 2
+	}
+
+	return &Service{
+		uow:            uow,
+		orders:         orders,
+		catalog:        catalog,
+		stepTimeout:    defaultStepTimeout,
+		maxStepRetries: maxStepRetries,
 	}
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, input CreateOrderDTO) (*OrderOutputDTO, error) {
+func (s *Service) CreateOrder(ctx context.Context, input CreateOrderDTO) (*OrderOutputDTO, error) {
 	if input.BuyerUserID == uuid.Nil {
 		return nil, fmt.Errorf("%w: buyer user id is required", domain.ErrInvalidInput)
 	}
@@ -116,7 +127,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, input CreateOrderDTO) (*
 	return toOrderOutputDTO(order), nil
 }
 
-func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderOutputDTO, error) {
+func (s *Service) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderOutputDTO, error) {
 	if input.OrderID == uuid.Nil {
 		return nil, fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
 	}
@@ -131,7 +142,7 @@ func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderO
 			return fmt.Errorf("get order %s for payment: %w", input.OrderID, err)
 		}
 
-		if order.Status == domain.OrderStatusPaid {
+		if order.Status == domain.OrderStatusProcessing || order.Status == domain.OrderStatusPaid {
 			if order.PaymentID != nil && *order.PaymentID == input.PaymentID {
 				updatedOrder = order
 				return nil
@@ -139,7 +150,7 @@ func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderO
 			return domain.ErrOrderAlreadyPaid
 		}
 
-		if err := order.MarkPaid(input.PaymentID); err != nil {
+		if err := order.StartFulfillment(input.PaymentID, s.stepTimeout); err != nil {
 			return err
 		}
 
@@ -147,39 +158,8 @@ func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderO
 			return fmt.Errorf("update order status: %w", err)
 		}
 
-		paidItems := make([]OrderPaidItemEventPayload, len(order.Items))
-		for i, it := range order.Items {
-			paidItems[i] = OrderPaidItemEventPayload{
-				ItemID:   it.ItemID,
-				ItemType: it.ItemType,
-				ArtistID: it.ArtistID,
-				Price:    it.Price,
-				Currency: it.Currency,
-			}
-		}
-
-		payload := OrderPaidEventPayload{
-			OrderID:     order.ID,
-			BuyerUserID: order.BuyerUserID,
-			TotalAmount: order.TotalAmount,
-			Currency:    order.Currency,
-			PaymentID:   input.PaymentID,
-			PaidAt:      time.Now().UTC(),
-			Items:       paidItems,
-		}
-
-		outboxEvent, err := domain.NewEvent(
-			domain.AggregateTypeOrder,
-			order.ID,
-			domain.EventTypeOrderPaid,
-			payload,
-		)
-		if err != nil {
-			return fmt.Errorf("build outbox event: %w", err)
-		}
-
-		if err := work.Outbox().Record(ctx, outboxEvent); err != nil {
-			return fmt.Errorf("record outbox event: %w", err)
+		if err := s.recordGrantEntitlementsCmd(ctx, work, order); err != nil {
+			return err
 		}
 
 		updatedOrder = order
@@ -192,7 +172,187 @@ func (s *OrderService) PayOrder(ctx context.Context, input PayOrderDTO) (*OrderO
 	return toOrderOutputDTO(updatedOrder), nil
 }
 
-func (s *OrderService) FailOrder(ctx context.Context, input FailOrderDTO) (*OrderOutputDTO, error) {
+func (s *Service) OnCatalogEntitlementsGranted(ctx context.Context, orderID uuid.UUID) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s: %w", orderID, err)
+		}
+
+		if order.Saga.Step != domain.StepGrantEntitlements {
+			return nil
+		}
+
+		if err := order.OnEntitlementsGranted(s.stepTimeout); err != nil {
+			return fmt.Errorf("fsm on entitlements granted: %w", err)
+		}
+
+		if err := work.Orders().Update(ctx, order); err != nil {
+			return fmt.Errorf("updated order: %w", err)
+		}
+
+		return s.recordSettleBillingCmd(ctx, work, order)
+	})
+}
+
+func (s *Service) OnBillingSettled(ctx context.Context, orderID uuid.UUID) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s: %w", orderID, err)
+		}
+
+		if order.Saga.Status == domain.SagaStatusCompleted {
+			return nil
+		}
+
+		if err := order.CompleteFulfillment(); err != nil {
+			return fmt.Errorf("complete fulfillment: %w", err)
+		}
+
+		return work.Orders().Update(ctx, order)
+	})
+}
+
+func (s *Service) OnBillingFailed(ctx context.Context, orderID uuid.UUID, reason string) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s: %w", orderID, err)
+		}
+
+		if order.Saga.Status == domain.SagaStatusCompensating || order.Saga.Status == domain.SagaStatusFailed {
+			return nil
+		}
+
+		if err := order.OnSettlementFailed(reason, s.stepTimeout); err != nil {
+			return fmt.Errorf("fsm on settlement failed: %w", err)
+		}
+
+		if err := work.Orders().Update(ctx, order); err != nil {
+			return fmt.Errorf("updated order: %w", err)
+		}
+
+		return s.recordRevokeEntitlementsCmd(ctx, work, order.ID, reason)
+	})
+}
+
+func (s *Service) OnCatalogEntitlementsRevoked(ctx context.Context, orderID uuid.UUID) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s: %w", orderID, err)
+		}
+
+		if order.Saga.Step == domain.StepRefundPayment || order.Saga.Status == domain.SagaStatusFailed {
+			return nil
+		}
+
+		if err := order.OnEntitlementsRevoked(s.stepTimeout); err != nil {
+			return fmt.Errorf("fsm on entitlements revoked: %w", err)
+		}
+
+		if err := work.Orders().Update(ctx, order); err != nil {
+			return fmt.Errorf("update order: %w", err)
+		}
+
+		reason := "order fulfillment failed"
+		if order.Saga.FailureReason != nil {
+			reason = *order.Saga.FailureReason
+		}
+
+		return s.recordRefundPaymentCmd(ctx, work, order.ID, reason)
+	})
+}
+
+func (s *Service) OnCatalogEntitlementsFailed(ctx context.Context, orderID uuid.UUID, reason string) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s: %w", orderID, err)
+		}
+
+		if order.Saga.Step == domain.StepRefundPayment || order.Saga.Status == domain.SagaStatusFailed {
+			return nil
+		}
+
+		if err := order.OnEntitlementsGrantFailed(reason, s.stepTimeout); err != nil {
+			return fmt.Errorf("fsm on entitlements grant failed: %w", err)
+		}
+
+		if err := work.Orders().Update(ctx, order); err != nil {
+			return fmt.Errorf("update order: %w", err)
+		}
+
+		return s.recordRefundPaymentCmd(ctx, work, order.ID, reason)
+	})
+}
+
+func (s *Service) OnPaymentRefunded(ctx context.Context, orderID uuid.UUID) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s: %w", orderID, err)
+		}
+
+		if order.Saga.Status == domain.SagaStatusFailed {
+			return nil
+		}
+
+		if err := order.CompleteCompensation(); err != nil {
+			return fmt.Errorf("complete compensation: %w", err)
+		}
+
+		return work.Orders().Update(ctx, order)
+	})
+}
+
+func (s *Service) HandleTimeout(ctx context.Context, orderID uuid.UUID) error {
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		order, err := work.Orders().GetByIDForUpdate(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("get order %s for timeout: %w", orderID, err)
+		}
+
+		if !order.IsTimedOut(time.Now().UTC()) {
+			return nil
+		}
+
+		step, isRetry, err := order.HandleTimeout(time.Now().UTC(), s.stepTimeout, s.maxStepRetries)
+		if err != nil {
+			return fmt.Errorf("handle timeout: %w", err)
+		}
+
+		if err := work.Orders().Update(ctx, order); err != nil {
+			return fmt.Errorf("update order: %w", err)
+		}
+
+		if isRetry {
+			switch step {
+			case domain.StepGrantEntitlements:
+				return s.recordGrantEntitlementsCmd(ctx, work, order)
+			case domain.StepSettleBilling:
+				return s.recordSettleBillingCmd(ctx, work, order)
+			case domain.StepRevokeEntitlements:
+				return s.recordRevokeEntitlementsCmd(ctx, work, order.ID, "step timeout retry")
+			case domain.StepRefundPayment:
+				return s.recordRefundPaymentCmd(ctx, work, order.ID, "step timeout retry")
+			}
+			return nil
+		}
+
+		switch step {
+		case domain.StepRevokeEntitlements:
+			return s.recordRevokeEntitlementsCmd(ctx, work, order.ID, "step timeout after max retries")
+		case domain.StepRefundPayment:
+			return s.recordRefundPaymentCmd(ctx, work, order.ID, "step timeout after max retries")
+		}
+
+		return nil
+	})
+}
+
+func (s *Service) FailOrder(ctx context.Context, input FailOrderDTO) (*OrderOutputDTO, error) {
 	if input.OrderID == uuid.Nil {
 		return nil, fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
 	}
@@ -252,7 +412,7 @@ func (s *OrderService) FailOrder(ctx context.Context, input FailOrderDTO) (*Orde
 	return toOrderOutputDTO(failedOrder), nil
 }
 
-func (s *OrderService) GetOrder(ctx context.Context, input GetOrderDTO) (*OrderOutputDTO, error) {
+func (s *Service) GetOrder(ctx context.Context, input GetOrderDTO) (*OrderOutputDTO, error) {
 	if input.OrderID == uuid.Nil {
 		return nil, fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
 	}
@@ -269,7 +429,7 @@ func (s *OrderService) GetOrder(ctx context.Context, input GetOrderDTO) (*OrderO
 	return toOrderOutputDTO(order), nil
 }
 
-func (s *OrderService) ListBuyerOrders(ctx context.Context, input ListBuyerOrdersDTO) (*ListOrdersOutputDTO, error) {
+func (s *Service) ListBuyerOrders(ctx context.Context, input ListBuyerOrdersDTO) (*ListOrdersOutputDTO, error) {
 	if input.BuyerUserID == uuid.Nil {
 		return nil, fmt.Errorf("%w: buyer user id is required", domain.ErrInvalidInput)
 	}
@@ -296,7 +456,7 @@ func (s *OrderService) ListBuyerOrders(ctx context.Context, input ListBuyerOrder
 	}, nil
 }
 
-func (s *OrderService) CancelOrder(ctx context.Context, input CancelOrderDTO) (*OrderOutputDTO, error) {
+func (s *Service) CancelOrder(ctx context.Context, input CancelOrderDTO) (*OrderOutputDTO, error) {
 	if input.OrderID == uuid.Nil {
 		return nil, fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
 	}
@@ -333,4 +493,113 @@ func (s *OrderService) CancelOrder(ctx context.Context, input CancelOrderDTO) (*
 	}
 
 	return toOrderOutputDTO(cancelledOrder), nil
+}
+
+func (s *Service) recordRevokeEntitlementsCmd(ctx context.Context, work uow.UnitOfWork, orderID uuid.UUID, reason string) error {
+	cmd := RevokeEntitlementsCommand{
+		CommandID: uuid.New(),
+		SagaID:    orderID,
+		OrderID:   orderID,
+		Reason:    reason,
+	}
+
+	event, err := domain.NewEvent(
+		domain.AggregateTypeOrder,
+		orderID,
+		domain.EventTypeCmdCatalogRevokeEntitlements,
+		cmd,
+	)
+	if err != nil {
+		return fmt.Errorf("build revoke command: %w", err)
+	}
+
+	return work.Outbox().Record(ctx, event)
+}
+
+func (s *Service) recordRefundPaymentCmd(ctx context.Context, work uow.UnitOfWork, orderID uuid.UUID, reason string) error {
+	cmd := RefundPaymentCommand{
+		CommandID: uuid.New(),
+		SagaID:    orderID,
+		OrderID:   orderID,
+		Reason:    reason,
+	}
+
+	event, err := domain.NewEvent(
+		domain.AggregateTypeOrder,
+		orderID,
+		domain.EventTypeCmdPaymentRefund,
+		cmd,
+	)
+	if err != nil {
+		return fmt.Errorf("build refund command: %w", err)
+	}
+
+	return work.Outbox().Record(ctx, event)
+}
+
+func (s *Service) recordGrantEntitlementsCmd(ctx context.Context, work uow.UnitOfWork, order *domain.Order) error {
+	items := make([]GrantEntitlementsCommandItem, len(order.Items))
+	for i, it := range order.Items {
+		items[i] = GrantEntitlementsCommandItem{
+			ItemID:   it.ItemID,
+			ItemType: it.ItemType,
+		}
+	}
+
+	cmd := GrantEntitlementsCommand{
+		CommandID:   uuid.New(),
+		SagaID:      order.ID,
+		OrderID:     order.ID,
+		BuyerUserID: order.BuyerUserID,
+		Items:       items,
+	}
+
+	outboxEvent, err := domain.NewEvent(
+		domain.AggregateTypeOrder,
+		order.ID,
+		domain.EventTypeCmdCatalogGrantEntitlements,
+		cmd,
+	)
+	if err != nil {
+		return fmt.Errorf("build catalog command event: %w", err)
+	}
+
+	return work.Outbox().Record(ctx, outboxEvent)
+}
+
+func (s *Service) recordSettleBillingCmd(ctx context.Context, work uow.UnitOfWork, order *domain.Order) error {
+	items := make([]SettleOrderCommandItem, len(order.Items))
+	for i, it := range order.Items {
+		items[i] = SettleOrderCommandItem{
+			ItemID:   it.ItemID,
+			ItemType: string(it.ItemType),
+			ArtistID: it.ArtistID,
+			Price:    it.Price,
+			Currency: it.Currency,
+		}
+	}
+
+	cmd := SettleOrderCommand{
+		CommandID:   uuid.New(),
+		SagaID:      order.ID,
+		OrderID:     order.ID,
+		BuyerUserID: order.BuyerUserID,
+		TotalAmount: order.TotalAmount,
+		Currency:    order.Currency,
+		PaymentID:   *order.PaymentID,
+		PaidAt:      order.UpdatedAt,
+		Items:       items,
+	}
+
+	event, err := domain.NewEvent(
+		domain.AggregateTypeOrder,
+		order.ID,
+		domain.EventTypeCmdBillingSettleOrder,
+		cmd,
+	)
+	if err != nil {
+		return fmt.Errorf("build billing command event: %w", err)
+	}
+
+	return work.Outbox().Record(ctx, event)
 }

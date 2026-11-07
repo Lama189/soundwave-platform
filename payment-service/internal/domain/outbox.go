@@ -21,6 +21,9 @@ const (
 	EventTypePaymentFailed    EventType = "payment.failed"
 	EventTypePaymentCancelled EventType = "payment.cancelled"
 	EventTypePaymentRefunded  EventType = "payment.refunded"
+
+	EventTypeSagaReplyPaymentRefunded EventType = "saga.reply.payment.refunded"
+	EventTypeSagaReplyPaymentFailed   EventType = "saga.reply.payment.failed"
 )
 
 func (t AggregateType) IsValid() bool {
@@ -38,7 +41,9 @@ func (t EventType) IsValid() bool {
 		EventTypePaymentSucceeded,
 		EventTypePaymentFailed,
 		EventTypePaymentCancelled,
-		EventTypePaymentRefunded:
+		EventTypePaymentRefunded,
+		EventTypeSagaReplyPaymentRefunded,
+		EventTypeSagaReplyPaymentFailed:
 		return true
 	default:
 		return false
@@ -139,4 +144,12 @@ type PaymentRefundedPayload struct {
 	PaymentID  uuid.UUID `json:"payment_id"`
 	OrderID    uuid.UUID `json:"order_id"`
 	ExternalID string    `json:"external_id"`
+}
+
+type PaymentSagaReplyPayload struct {
+	CommandID uuid.UUID `json:"command_id"`
+	SagaID    uuid.UUID `json:"saga_id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	Success   bool      `json:"success"`
+	Error     string    `json:"error,omitempty"`
 }

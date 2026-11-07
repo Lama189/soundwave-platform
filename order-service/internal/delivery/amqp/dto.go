@@ -16,3 +16,11 @@ type PaymentFailedEvent struct {
 	OrderID       uuid.UUID `json:"order_id"`
 	FailureReason string    `json:"failure_reason"`
 }
+
+type SagaReplyEvent struct {
+	CommandID uuid.UUID `json:"command_id"`
+	SagaID    uuid.UUID `json:"saga_id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	Success   bool      `json:"success"`
+	Error     string    `json:"error,omitempty"`
+}

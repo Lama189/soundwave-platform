@@ -2,6 +2,7 @@ package user_purchase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -30,93 +31,147 @@ func NewService(uow UnitOfWorkManager, purchases UserPurchaseRepository, tracks 
 	}
 }
 
-func (s *Service) ProcessPaidOrder(ctx context.Context, input ProcessPaidOrderInput) error {
+func (s *Service) ProcessGrantEntitlements(ctx context.Context, input GrantEntitlementsInput) error {
 	if err := input.Validate(); err != nil {
 		return err
 	}
 
-	alreadyProcessed, err := s.purchases.ExistsByOrderID(ctx, input.OrderID)
-	if err != nil {
-		return fmt.Errorf("check order %s for idempotency: %w", input.OrderID, err)
-	}
-	if alreadyProcessed {
-		s.logger.Info(
-			"order already processed, skipping purchase creation",
-			slog.String("order_id", input.OrderID.String()),
-			slog.String("user_id", input.BuyerUserID.String()),
-		)
-		return nil
-	}
-
-	var explicitTrackIDs []uuid.UUID
-	var explicitAlbumIDs []uuid.UUID
-
-	for _, item := range input.Items {
-		switch item.ItemType {
-		case itemtype.Track:
-			explicitTrackIDs = append(explicitTrackIDs, item.ItemID)
-		case itemtype.Album:
-			explicitAlbumIDs = append(explicitAlbumIDs, item.ItemID)
-		}
-	}
-
 	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		alreadyProcessed, err := work.ProcessedCommands().HasBeenProcessed(ctx, input.CommandID)
+		if err != nil {
+			return fmt.Errorf("check inbox: %w", err)
+		}
+		if alreadyProcessed {
+			s.logger.Info("command already processed, skipping",
+				slog.String("command_id", input.CommandID.String()))
+			return nil
+		}
+
 		var purchasesToCreate []*domain.UserPurchase
 		seenTracks := make(map[uuid.UUID]struct{})
 
-		for _, trackID := range explicitTrackIDs {
-			if _, seen := seenTracks[trackID]; seen {
-				continue
-			}
-			seenTracks[trackID] = struct{}{}
-
-			p, err := domain.NewTrackPurchase(input.BuyerUserID, input.OrderID, trackID)
-			if err != nil {
-				return fmt.Errorf("init track purchase %s: %w", trackID, err)
-			}
-
-			purchasesToCreate = append(purchasesToCreate, p)
-		}
-
-		for _, albumID := range explicitAlbumIDs {
-			albumPurchase, err := domain.NewAlbumPurchase(input.BuyerUserID, input.OrderID, albumID)
-			if err != nil {
-				return fmt.Errorf("init album purchase %s: %w", albumID, err)
-			}
-
-			purchasesToCreate = append(purchasesToCreate, albumPurchase)
-
-			albumTracks, err := work.Tracks().GetByAlbumID(ctx, albumID)
-			if err != nil {
-				return fmt.Errorf("fetch album %s tracks for purchase fan-out: %w", albumID, err)
-			}
-
-			for _, track := range albumTracks {
-				if _, seen := seenTracks[track.ID]; seen {
+		for _, item := range input.Items {
+			switch item.ItemType {
+			case itemtype.Track:
+				if _, seen := seenTracks[item.ItemID]; seen {
 					continue
 				}
-
-				seenTracks[track.ID] = struct{}{}
-
-				trackPurchase, err := domain.NewTrackPurchase(input.BuyerUserID, input.OrderID, track.ID)
+				seenTracks[item.ItemID] = struct{}{}
+				p, err := domain.NewTrackPurchase(input.BuyerUserID, input.OrderID, item.ItemID)
 				if err != nil {
-					return fmt.Errorf("init album child track purchase %s: %w", track.ID, err)
+					return fmt.Errorf("init track purchase %s: %w", item.ItemID, err)
+				}
+				purchasesToCreate = append(purchasesToCreate, p)
+
+			case itemtype.Album:
+				albumPurchase, err := domain.NewAlbumPurchase(input.BuyerUserID, input.OrderID, item.ItemID)
+				if err != nil {
+					return fmt.Errorf("init album purchase %s: %w", item.ItemID, err)
+				}
+				purchasesToCreate = append(purchasesToCreate, albumPurchase)
+
+				albumTracks, err := work.Tracks().GetByAlbumID(ctx, item.ItemID)
+				if err != nil {
+					return fmt.Errorf("fetch album %s tracks: %w", item.ItemID, err)
 				}
 
-				purchasesToCreate = append(purchasesToCreate, trackPurchase)
+				for _, track := range albumTracks {
+					if _, seen := seenTracks[track.ID]; seen {
+						continue
+					}
+					seenTracks[track.ID] = struct{}{}
+					trackPurchase, err := domain.NewTrackPurchase(input.BuyerUserID, input.OrderID, track.ID)
+					if err != nil {
+						return fmt.Errorf("init album child track purchase: %w", err)
+					}
+					purchasesToCreate = append(purchasesToCreate, trackPurchase)
+				}
 			}
 		}
 
 		if err := work.Purchases().CreateBatch(ctx, purchasesToCreate); err != nil {
-			return fmt.Errorf("save batch purchases for order %s: %w", input.OrderID, err)
+			return fmt.Errorf("save purchases batch: %w", err)
 		}
 
-		s.logger.Info(
-			"order purchases recorded successfully",
-			slog.String("order_id", input.OrderID.String()),
-			slog.String("buyer_user_id", input.BuyerUserID.String()),
-			slog.Int("total_entitlements", len(purchasesToCreate)),
+		payloadBytes, err := json.Marshal(CatalogReplyPayload{
+			CommandID: input.CommandID,
+			SagaID:    input.SagaID,
+			OrderID:   input.OrderID,
+			Success:   true,
+		})
+		if err != nil {
+			return fmt.Errorf("marshal reply payload: %w", err)
+		}
+
+		replyEvent, err := domain.NewEvent(
+			uuid.New(),
+			domain.AggregateTypeUserPurchase,
+			input.OrderID,
+			domain.EventTypeSagaReplyCatalogGranted,
+			payloadBytes,
 		)
+		if err != nil {
+			return fmt.Errorf("create outbox reply event: %w", err)
+		}
+
+		if err := work.Outbox().Record(ctx, replyEvent); err != nil {
+			return fmt.Errorf("record outbox reply: %w", err)
+		}
+
+		if err := work.ProcessedCommands().MarkProcessed(ctx, input.CommandID, input.SagaID, "catalog.grant_entitlements"); err != nil {
+			return fmt.Errorf("mark command in inbox: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func (s *Service) RevokePurchases(ctx context.Context, input RevokePurchasesInput) error {
+	if err := input.Validate(); err != nil {
+		return err
+	}
+
+	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
+		alreadyProcessed, err := work.ProcessedCommands().HasBeenProcessed(ctx, input.CommandID)
+		if err != nil {
+			return fmt.Errorf("check inbox: %w", err)
+		}
+		if alreadyProcessed {
+			return nil
+		}
+
+		if err := work.Purchases().RevokeByOrderID(ctx, input.OrderID); err != nil {
+			return fmt.Errorf("revoke purchases: %w", err)
+		}
+
+		payloadBytes, err := json.Marshal(CatalogReplyPayload{
+			CommandID: input.CommandID,
+			SagaID:    input.SagaID,
+			OrderID:   input.OrderID,
+			Success:   true,
+		})
+		if err != nil {
+			return fmt.Errorf("marshal revoke reply payload: %w", err)
+		}
+
+		replyEvent, err := domain.NewEvent(
+			uuid.New(),
+			domain.AggregateTypeUserPurchase,
+			input.OrderID,
+			domain.EventTypeSagaReplyCatalogRevoked,
+			payloadBytes,
+		)
+		if err != nil {
+			return fmt.Errorf("create outbox revoke event: %w", err)
+		}
+
+		if err := work.Outbox().Record(ctx, replyEvent); err != nil {
+			return fmt.Errorf("record outbox reply: %w", err)
+		}
+
+		if err := work.ProcessedCommands().MarkProcessed(ctx, input.CommandID, input.SagaID, "catalog.revoke_entitlements"); err != nil {
+			return fmt.Errorf("mark revoke command in inbox: %w", err)
+		}
 
 		return nil
 	})
@@ -176,6 +231,8 @@ func (s *Service) ListUserPurchases(ctx context.Context, input ListUserPurchases
 			ItemType:  p.ItemType,
 			TrackID:   p.TrackID,
 			AlbumID:   p.AlbumID,
+			Status:    p.Status,
+			RevokedAt: p.RevokedAt,
 			CreatedAt: p.CreatedAt,
 		}
 	}

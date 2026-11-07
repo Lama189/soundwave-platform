@@ -159,3 +159,50 @@ func TestUserPurchase_Validate_Errors(t *testing.T) {
 		})
 	}
 }
+
+func TestUserPurchase_RevokeAndIsActive(t *testing.T) {
+	purchase, err := domain.NewTrackPurchase(uuid.New(), uuid.New(), uuid.New())
+	if err != nil {
+		t.Fatalf("unexpected error creating purchase: %v", err)
+	}
+
+	if !purchase.IsActive() {
+		t.Errorf("expected purchase to be active")
+	}
+	if purchase.Status != domain.PurchaseStatusActive {
+		t.Errorf("expected status %s, got %s", domain.PurchaseStatusActive, purchase.Status)
+	}
+	if purchase.RevokedAt != nil {
+		t.Errorf("expected revokedAt to be nil")
+	}
+
+	purchase.Revoke()
+
+	if purchase.IsActive() {
+		t.Errorf("expected purchase to not be active after revoke")
+	}
+	if purchase.Status != domain.PurchaseStatusRevoked {
+		t.Errorf("expected status %s, got %s", domain.PurchaseStatusRevoked, purchase.Status)
+	}
+	if purchase.RevokedAt == nil {
+		t.Errorf("expected revokedAt to be non-nil")
+	}
+
+	firstRevokedAt := *purchase.RevokedAt
+	purchase.Revoke()
+	if *purchase.RevokedAt != firstRevokedAt {
+		t.Errorf("expected idempotent Revoke not to change revokedAt")
+	}
+}
+
+func TestUserPurchase_InvalidStatus(t *testing.T) {
+	purchase, err := domain.NewTrackPurchase(uuid.New(), uuid.New(), uuid.New())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	purchase.Status = "INVALID_STATUS"
+	if err := purchase.Validate(); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("expected ErrInvalidInput for invalid status, got %v", err)
+	}
+}

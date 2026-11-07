@@ -64,7 +64,7 @@ func main() {
 
 	catalogClient := grpcclient.NewCatalogClient(catalogConn, cfg.Catalog.Timeout)
 
-	orderService := order.NewOrderService(uowManager, orderRepo, catalogClient)
+	orderService := order.NewService(uowManager, orderRepo, catalogClient, cfg.Saga.StepTimeout, cfg.Saga.MaxStepRetries)
 
 	outboxRelay := worker.NewOutboxRelay(amqpConn, outboxRepo, logger, cfg.Relay)
 	if err := outboxRelay.Start(ctx); err != nil {
@@ -74,6 +74,16 @@ func main() {
 	paymentConsumer := deliveryAmqp.NewPaymentConsumer(amqpConn, orderService, logger)
 	if err := paymentConsumer.Start(ctx); err != nil {
 		log.Fatalf("failed to start payment consumer: %v", err)
+	}
+
+	sagaReplyConsumer := deliveryAmqp.NewSagaReplyConsumer(amqpConn, orderService, logger)
+	if err := sagaReplyConsumer.Start(ctx); err != nil {
+		log.Fatalf("failed to start saga reply consumer: %v", err)
+	}
+
+	sagaJanitor := worker.NewSagaJanitor(orderRepo, orderService, logger, cfg.Saga)
+	if err := sagaJanitor.Start(ctx); err != nil {
+		log.Fatalf("failed to start saga janitor: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()

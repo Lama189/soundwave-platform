@@ -14,6 +14,7 @@ type UnitOfWork interface {
 	Artists() ArtistRepository
 	Albums() AlbumRepository
 	Purchases() UserPurchaseRepository
+	ProcessedCommands() ProcessedCommandRepository
 }
 
 type Manager interface {
@@ -47,9 +48,15 @@ type AlbumRepository interface {
 type UserPurchaseRepository interface {
 	Create(ctx context.Context, purchase *domain.UserPurchase) error
 	CreateBatch(ctx context.Context, purchases []*domain.UserPurchase) error
+	RevokeByOrderID(ctx context.Context, orderID uuid.UUID) error
 	HasPurchasedTrack(ctx context.Context, userID, trackID uuid.UUID) (bool, error)
 	HasPurchasedAlbum(ctx context.Context, userID, albumID uuid.UUID) (bool, error)
 	GetPurchasedTrackIDsIn(ctx context.Context, userID uuid.UUID, trackIDs []uuid.UUID) (map[uuid.UUID]bool, error)
 	ListByUserID(ctx context.Context, userID uuid.UUID, itemType *domain.ItemType, limit, offset int) ([]*domain.UserPurchase, error)
 	ExistsByOrderID(ctx context.Context, orderID uuid.UUID) (bool, error)
+}
+
+type ProcessedCommandRepository interface {
+	HasBeenProcessed(ctx context.Context, commandID uuid.UUID) (bool, error)
+	MarkProcessed(ctx context.Context, commandID, sagaID uuid.UUID, commandName string) error
 }

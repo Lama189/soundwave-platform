@@ -57,10 +57,20 @@ CREATE TABLE IF NOT EXISTS outbox_events (
 CREATE INDEX IF NOT EXISTS idx_payment_outbox_unprocessed ON outbox_events(created_at ASC) INCLUDE (locked_until) WHERE processed_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_payment_outbox_processed ON outbox_events(processed_at ASC) WHERE processed_at IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS processed_commands (
+    command_id UUID PRIMARY KEY,
+    saga_id UUID NOT NULL,
+    command_name VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_processed_commands_saga ON processed_commands(saga_id);
+
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE IF EXISTS processed_commands;
 DROP TABLE IF EXISTS outbox_events;
 DROP TABLE IF EXISTS webhook_events;
 DROP TABLE IF EXISTS payments;

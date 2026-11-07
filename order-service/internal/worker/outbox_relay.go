@@ -11,10 +11,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/Lama189/soundwave-platform/order-service/internal/config"
+	"github.com/Lama189/soundwave-platform/order-service/internal/domain"
 )
 
 const (
-	OrderEventsExchange = "order-events"
+	OrderEventsExchange   = "order-events"
+	OrderCommandsExchange = "order.commands"
 )
 
 type OutboxRelay struct {
@@ -66,6 +68,12 @@ func (r *OutboxRelay) Start(ctx context.Context) error {
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s exchange: %w", OrderEventsExchange, err)
+	}
+
+	err = ch.ExchangeDeclare(OrderCommandsExchange, "direct", true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s exchange: %w", OrderCommandsExchange, err)
 	}
 
 	r.logger.Info("started order outbox relay worker",
@@ -149,8 +157,9 @@ func (r *OutboxRelay) processBatch(ctx context.Context, ch *amqp.Channel) {
 		}
 
 		routingKey := string(event.EventType)
+		exchange := selectExchange(event.EventType)
 
-		err := ch.PublishWithContext(ctx, OrderEventsExchange, routingKey, false, false, msg)
+		err := ch.PublishWithContext(ctx, exchange, routingKey, false, false, msg)
 		if err != nil {
 			r.logger.Error("failed to publish order outbox event to rabbitmq",
 				slog.String("event_id", event.ID.String()),
@@ -181,5 +190,17 @@ func (r *OutboxRelay) processBatch(ctx context.Context, ch *amqp.Channel) {
 		}
 
 		r.logger.Info("published order outbox events to rabbitmq", slog.Int("count", len(successfulIDs)))
+	}
+}
+
+func selectExchange(eventType domain.EventType) string {
+	switch eventType {
+	case domain.EventTypeCmdCatalogGrantEntitlements,
+		domain.EventTypeCmdCatalogRevokeEntitlements,
+		domain.EventTypeCmdBillingSettleOrder,
+		domain.EventTypeCmdPaymentRefund:
+		return OrderCommandsExchange
+	default:
+		return OrderEventsExchange
 	}
 }

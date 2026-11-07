@@ -72,22 +72,59 @@ type ListOrdersOutputDTO struct {
 	Orders []*OrderOutputDTO `json:"orders"`
 }
 
-type OrderPaidItemEventPayload struct {
+type GrantEntitlementsCommandItem struct {
 	ItemID   uuid.UUID         `json:"item_id"`
 	ItemType itemtype.ItemType `json:"item_type"`
-	ArtistID uuid.UUID         `json:"artist_id"`
-	Price    int64             `json:"price"`
-	Currency domain.Currency   `json:"currency"`
 }
 
-type OrderPaidEventPayload struct {
-	OrderID     uuid.UUID                   `json:"order_id"`
-	BuyerUserID uuid.UUID                   `json:"buyer_user_id"`
-	TotalAmount int64                       `json:"total_amount"`
-	Currency    domain.Currency             `json:"currency"`
-	PaymentID   uuid.UUID                   `json:"payment_id"`
-	PaidAt      time.Time                   `json:"paid_at"`
-	Items       []OrderPaidItemEventPayload `json:"items"`
+type GrantEntitlementsCommand struct {
+	CommandID   uuid.UUID                      `json:"command_id"`
+	SagaID      uuid.UUID                      `json:"saga_id"`
+	OrderID     uuid.UUID                      `json:"order_id"`
+	BuyerUserID uuid.UUID                      `json:"buyer_user_id"`
+	Items       []GrantEntitlementsCommandItem `json:"items"`
+}
+
+type RevokeEntitlementsCommand struct {
+	CommandID uuid.UUID `json:"command_id"`
+	SagaID    uuid.UUID `json:"saga_id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	Reason    string    `json:"reason"`
+}
+
+type SettleOrderCommandItem struct {
+	ItemID   uuid.UUID       `json:"item_id"`
+	ItemType string          `json:"item_type"`
+	ArtistID uuid.UUID       `json:"artist_id"`
+	Price    int64           `json:"price"`
+	Currency domain.Currency `json:"currency"`
+}
+
+type SettleOrderCommand struct {
+	CommandID   uuid.UUID                `json:"command_id"`
+	SagaID      uuid.UUID                `json:"saga_id"`
+	OrderID     uuid.UUID                `json:"order_id"`
+	BuyerUserID uuid.UUID                `json:"buyer_user_id"`
+	TotalAmount int64                    `json:"total_amount"`
+	Currency    domain.Currency          `json:"currency"`
+	PaymentID   uuid.UUID                `json:"payment_id"`
+	PaidAt      time.Time                `json:"paid_at"`
+	Items       []SettleOrderCommandItem `json:"items"`
+}
+
+type RefundPaymentCommand struct {
+	CommandID uuid.UUID `json:"command_id"`
+	SagaID    uuid.UUID `json:"saga_id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	Reason    string    `json:"reason"`
+}
+
+type SagaReplyPayload struct {
+	CommandID uuid.UUID `json:"command_id"`
+	SagaID    uuid.UUID `json:"saga_id"`
+	OrderID   uuid.UUID `json:"order_id"`
+	Success   bool      `json:"success"`
+	Error     string    `json:"error,omitempty"`
 }
 
 type OrderFailedEventPayload struct {

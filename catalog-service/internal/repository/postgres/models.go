@@ -164,6 +164,8 @@ type userPurchaseModel struct {
 	ItemType  string     `db:"item_type"`
 	TrackID   *uuid.UUID `db:"track_id"`
 	AlbumID   *uuid.UUID `db:"album_id"`
+	Status    string     `db:"status"`
+	RevokedAt *time.Time `db:"revoked_at"`
 	CreatedAt time.Time  `db:"created_at"`
 }
 
@@ -175,6 +177,8 @@ func (m *userPurchaseModel) toDomain() *domain.UserPurchase {
 		domain.ItemType(m.ItemType),
 		m.TrackID,
 		m.AlbumID,
+		domain.PurchaseStatus(m.Status),
+		m.RevokedAt,
 		m.CreatedAt,
 	)
 }

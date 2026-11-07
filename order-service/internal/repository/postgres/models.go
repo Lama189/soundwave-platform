@@ -8,18 +8,35 @@ import (
 )
 
 type orderModel struct {
-	ID            uuid.UUID  `db:"id"`
-	BuyerUserID   uuid.UUID  `db:"buyer_user_id"`
-	Status        string     `db:"status"`
-	TotalAmount   int64      `db:"total_amount"`
-	Currency      string     `db:"currency"`
-	PaymentID     *uuid.UUID `db:"payment_id"`
-	FailureReason *string    `db:"failure_reason"`
-	CreatedAt     time.Time  `db:"created_at"`
-	UpdatedAt     time.Time  `db:"updated_at"`
+	ID                uuid.UUID  `db:"id"`
+	BuyerUserID       uuid.UUID  `db:"buyer_user_id"`
+	Status            string     `db:"status"`
+	TotalAmount       int64      `db:"total_amount"`
+	Currency          string     `db:"currency"`
+	PaymentID         *uuid.UUID `db:"payment_id"`
+	FailureReason     *string    `db:"failure_reason"`
+	SagaStatus        string     `db:"saga_status"`
+	SagaStep          string     `db:"saga_step"`
+	SagaFailureReason *string    `db:"saga_failure_reason"`
+	StepTimeoutAt     *time.Time `db:"step_timeout_at"`
+	StepRetries       int        `db:"step_retries"`
+	CreatedAt         time.Time  `db:"created_at"`
+	UpdatedAt         time.Time  `db:"updated_at"`
 }
 
 func (m *orderModel) toDomain(items []domain.OrderItem) *domain.Order {
+	saga := domain.SagaState{
+		Status:        domain.SagaStatus(m.SagaStatus),
+		Step:          domain.SagaStep(m.SagaStep),
+		StepRetries:   m.StepRetries,
+		FailureReason: m.SagaFailureReason,
+		StepTimeoutAt: m.StepTimeoutAt,
+		UpdatedAt:     m.UpdatedAt,
+	}
+	if saga.Status == "" {
+		saga = domain.InitialSagaState()
+	}
+
 	return domain.RestoreOrder(
 		m.ID,
 		m.BuyerUserID,
@@ -31,6 +48,7 @@ func (m *orderModel) toDomain(items []domain.OrderItem) *domain.Order {
 		m.FailureReason,
 		m.CreatedAt,
 		m.UpdatedAt,
+		saga,
 	)
 }
 

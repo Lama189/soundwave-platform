@@ -11,6 +11,7 @@ type OrderStatus string
 
 const (
 	OrderStatusPendingPayment OrderStatus = "pending_payment"
+	OrderStatusProcessing     OrderStatus = "processing"
 	OrderStatusPaid           OrderStatus = "paid"
 	OrderStatusFailed         OrderStatus = "failed"
 	OrderStatusCancelled      OrderStatus = "cancelled"
@@ -19,7 +20,7 @@ const (
 
 func (s OrderStatus) IsValid() bool {
 	switch s {
-	case OrderStatusCancelled, OrderStatusFailed, OrderStatusPaid, OrderStatusPendingPayment, OrderStatusRefunded:
+	case OrderStatusCancelled, OrderStatusProcessing, OrderStatusFailed, OrderStatusPaid, OrderStatusPendingPayment, OrderStatusRefunded:
 		return true
 	default:
 		return false
@@ -37,6 +38,7 @@ type Order struct {
 	FailureReason *string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	Saga          SagaState
 }
 
 func NewOrder(buyerUserID uuid.UUID, items []OrderItem) (*Order, error) {
@@ -70,6 +72,7 @@ func NewOrder(buyerUserID uuid.UUID, items []OrderItem) (*Order, error) {
 		Currency:    orderCurrency,
 		CreatedAt:   now,
 		UpdatedAt:   now,
+		Saga:        InitialSagaState(),
 	}
 
 	if err := o.Validate(); err != nil {
@@ -79,7 +82,7 @@ func NewOrder(buyerUserID uuid.UUID, items []OrderItem) (*Order, error) {
 	return o, nil
 }
 
-func RestoreOrder(id, buyerUserID uuid.UUID, status OrderStatus, items []OrderItem, totalAmount int64, currency Currency, paymentID *uuid.UUID, failureReason *string, createdAt, updatedAt time.Time) *Order {
+func RestoreOrder(id, buyerUserID uuid.UUID, status OrderStatus, items []OrderItem, totalAmount int64, currency Currency, paymentID *uuid.UUID, failureReason *string, createdAt, updatedAt time.Time, saga SagaState) *Order {
 	return &Order{
 		ID:            id,
 		BuyerUserID:   buyerUserID,
@@ -91,7 +94,25 @@ func RestoreOrder(id, buyerUserID uuid.UUID, status OrderStatus, items []OrderIt
 		FailureReason: failureReason,
 		CreatedAt:     createdAt,
 		UpdatedAt:     updatedAt,
+		Saga:          saga,
 	}
+}
+
+func (o *Order) MarkProcessing(paymentID uuid.UUID) error {
+	if paymentID == uuid.Nil {
+		return fmt.Errorf("%w: payment id is required", ErrInvalidInput)
+	}
+	if o.Status == OrderStatusProcessing {
+		return nil
+	}
+	if err := o.ensureCanTransition(OrderStatusProcessing); err != nil {
+		return err
+	}
+
+	o.Status = OrderStatusProcessing
+	o.PaymentID = &paymentID
+	o.UpdatedAt = time.Now().UTC()
+	return nil
 }
 
 func (o *Order) MarkPaid(paymentID uuid.UUID) error {
@@ -107,6 +128,19 @@ func (o *Order) MarkPaid(paymentID uuid.UUID) error {
 
 	o.Status = OrderStatusPaid
 	o.PaymentID = &paymentID
+	o.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (o *Order) MarkRefunded() error {
+	if o.Status == OrderStatusRefunded {
+		return nil
+	}
+	if err := o.ensureCanTransition(OrderStatusRefunded); err != nil {
+		return err
+	}
+
+	o.Status = OrderStatusRefunded
 	o.UpdatedAt = time.Now().UTC()
 	return nil
 }
@@ -165,7 +199,13 @@ func (o *Order) CanTransitionTo(next OrderStatus) bool {
 	switch o.Status {
 	case OrderStatusPendingPayment:
 		switch next {
-		case OrderStatusPaid, OrderStatusFailed, OrderStatusCancelled:
+		case OrderStatusProcessing, OrderStatusPaid, OrderStatusFailed, OrderStatusCancelled:
+			return true
+		}
+
+	case OrderStatusProcessing:
+		switch next {
+		case OrderStatusPaid, OrderStatusFailed, OrderStatusCancelled, OrderStatusRefunded:
 			return true
 		}
 
@@ -199,6 +239,14 @@ func (o *Order) Validate() error {
 
 	if !o.Status.IsValid() {
 		return fmt.Errorf("%w: invalid order status: %s", ErrInvalidInput, o.Status)
+	}
+
+	if o.Saga.Status != "" && !o.Saga.Status.IsValid() {
+		return fmt.Errorf("%w: invalid saga status: %s", ErrInvalidInput, o.Saga.Status)
+	}
+
+	if o.Saga.Step != "" && !o.Saga.Step.IsValid() {
+		return fmt.Errorf("%w: invalid saga step: %s", ErrInvalidInput, o.Saga.Step)
 	}
 
 	if len(o.Items) == 0 {

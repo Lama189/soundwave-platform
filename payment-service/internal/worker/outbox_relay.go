@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Lama189/soundwave-platform/payment-service/internal/config"
@@ -13,7 +14,8 @@ import (
 )
 
 const (
-	PaymentEventsExchange = "payment-events"
+	PaymentEventsExchange    = "payment-events"
+	OrderSagaRepliesExchange = "order.saga.replies"
 )
 
 type OutboxRelay struct {
@@ -65,6 +67,12 @@ func (r *OutboxRelay) Start(ctx context.Context) error {
 	if err != nil {
 		_ = ch.Close()
 		return fmt.Errorf("declare %s exchange: %w", PaymentEventsExchange, err)
+	}
+
+	err = ch.ExchangeDeclare(OrderSagaRepliesExchange, "topic", true, false, false, false, nil)
+	if err != nil {
+		_ = ch.Close()
+		return fmt.Errorf("declare %s exchange: %w", OrderSagaRepliesExchange, err)
 	}
 
 	r.logger.Info("started payment outbox relay worker",
@@ -148,8 +156,12 @@ func (r *OutboxRelay) processBatch(ctx context.Context, ch *amqp.Channel) {
 		}
 
 		routingKey := string(event.EventType)
+		exchange := PaymentEventsExchange
+		if strings.HasPrefix(routingKey, "saga.reply.") {
+			exchange = OrderSagaRepliesExchange
+		}
 
-		err := ch.PublishWithContext(ctx, PaymentEventsExchange, routingKey, false, false, msg)
+		err := ch.PublishWithContext(ctx, exchange, routingKey, false, false, msg)
 		if err != nil {
 			r.logger.Error("failed to publish payment outbox event to rabbitmq",
 				slog.String("event_id", event.ID.String()),

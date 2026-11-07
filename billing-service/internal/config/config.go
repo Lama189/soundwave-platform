@@ -17,6 +17,25 @@ type Config struct {
 	RabbitMQ RabbitMQConfig
 	FX       FXConfig
 	Billing  BillingConfig
+	Relay    RelayConfig
+}
+
+type RelayConfig struct {
+	PollInterval  time.Duration `env:"OUTBOX_RELAY_POLL_INTERVAL" env-default:"1s"`
+	BatchSize     int           `env:"OUTBOX_RELAY_BATCH_SIZE" env-default:"50"`
+	LockDuration  time.Duration `env:"OUTBOX_RELAY_LOCK_DURATION" env-default:"30s"`
+	MaxRetries    int           `env:"OUTBOX_RELAY_MAX_RETRIES" env-default:"5"`
+	RetentionDays int           `env:"OUTBOX_RELAY_RETENTION_DAYS" env-default:"7"`
+}
+
+func DefaultRelayConfig() RelayConfig {
+	return RelayConfig{
+		PollInterval:  1 * time.Second,
+		BatchSize:     50,
+		LockDuration:  30 * time.Second,
+		MaxRetries:    5,
+		RetentionDays: 7,
+	}
 }
 
 type GRPCConfig struct {

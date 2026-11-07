@@ -28,29 +28,23 @@ func NewService(uow uow.Manager, platformFeePercent int) *Service {
 	}
 }
 
-func (s *Service) ProcessPaidOrder(ctx context.Context, input ProcessPaidOrderInput) error {
-	if input.OrderID == uuid.Nil {
-		return fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
-	}
-	if len(input.Items) == 0 {
-		return fmt.Errorf("%w: order items cannot be empty", domain.ErrInvalidInput)
+func (s *Service) ProcessSettleOrder(ctx context.Context, input SettleOrderInput) error {
+	if err := input.Validate(); err != nil {
+		return err
 	}
 
 	return s.uow.Do(ctx, func(work uow.UnitOfWork) error {
-		alreadyProcessed, err := work.ProcessedEvents().IsProcessed(ctx, input.OrderID)
+		alreadyProcessed, err := work.ProcessedCommands().HasBeenProcessed(ctx, input.CommandID)
 		if err != nil {
-			return fmt.Errorf("check order idempotency: %w", err)
+			return fmt.Errorf("check inbox: %w", err)
 		}
 		if alreadyProcessed {
-			return domain.ErrOrderAlreadyProcessed
+			return nil
 		}
 
 		for _, item := range input.Items {
 			if item.ArtistID == uuid.Nil {
 				continue
-			}
-			if !item.ItemType.IsValid() {
-				return fmt.Errorf("%w: unsupported item type %q", domain.ErrInvalidInput, item.ItemType)
 			}
 
 			feeAmount := (item.Price * int64(s.platformFeePercent)) / 100
@@ -105,13 +99,29 @@ func (s *Service) ProcessPaidOrder(ctx context.Context, input ProcessPaidOrderIn
 			}
 		}
 
-		processedEvent, err := domain.NewProcessedEvent(input.OrderID, domain.InboxEventTypeOrderPaid)
-		if err != nil {
-			return fmt.Errorf("create processed event: %w", err)
+		replyPayload := BillingReplyPayload{
+			CommandID: input.CommandID,
+			SagaID:    input.SagaID,
+			OrderID:   input.OrderID,
+			Success:   true,
 		}
 
-		if err := work.ProcessedEvents().MarkProcessed(ctx, processedEvent); err != nil {
-			return fmt.Errorf("mark event as processed: %w", err)
+		replyEvent, err := domain.NewEvent(
+			domain.AggregateTypeOrder,
+			input.OrderID,
+			domain.EventTypeSagaReplyBillingSettled,
+			replyPayload,
+		)
+		if err != nil {
+			return fmt.Errorf("create outbox reply event: %w", err)
+		}
+
+		if err := work.Outbox().Record(ctx, replyEvent); err != nil {
+			return fmt.Errorf("record outbox reply: %w", err)
+		}
+
+		if err := work.ProcessedCommands().MarkProcessed(ctx, input.CommandID, input.SagaID, "billing.settle_order"); err != nil {
+			return fmt.Errorf("mark command in inbox: %w", err)
 		}
 
 		return nil

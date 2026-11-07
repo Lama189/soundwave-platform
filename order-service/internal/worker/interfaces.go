@@ -15,3 +15,11 @@ type OutboxRepository interface {
 	RecordFailure(ctx context.Context, id uuid.UUID, errMsg string, nextRetryAt time.Time, maxRetries int) error
 	CleanupProcessed(ctx context.Context, olderThan time.Duration) (int64, error)
 }
+
+type OrderRepository interface {
+	GetTimedOut(ctx context.Context, now time.Time, limit int) ([]*domain.Order, error)
+}
+
+type OrderTimeoutService interface {
+	HandleTimeout(ctx context.Context, orderID uuid.UUID) error
+}

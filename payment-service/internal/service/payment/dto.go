@@ -98,3 +98,23 @@ func toPaymentOutput(p *domain.Payment) *PaymentOutput {
 		UpdatedAt:      p.UpdatedAt,
 	}
 }
+
+type RefundCommandInput struct {
+	CommandID uuid.UUID
+	SagaID    uuid.UUID
+	OrderID   uuid.UUID
+	Reason    string
+}
+
+func (input *RefundCommandInput) Validate() error {
+	if input.CommandID == uuid.Nil {
+		return fmt.Errorf("%w: command id is required", domain.ErrInvalidInput)
+	}
+	if input.SagaID == uuid.Nil {
+		return fmt.Errorf("%w: saga id is required", domain.ErrInvalidInput)
+	}
+	if input.OrderID == uuid.Nil {
+		return fmt.Errorf("%w: order id is required", domain.ErrInvalidInput)
+	}
+	return nil
+}

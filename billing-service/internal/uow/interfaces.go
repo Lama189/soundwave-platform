@@ -13,6 +13,7 @@ type UnitOfWork interface {
 	Payouts() PayoutRepository
 	Outbox() OutboxRepository
 	ProcessedEvents() ProcessedEventsRepository
+	ProcessedCommands() ProcessedCommandRepository
 }
 
 type Manager interface {
@@ -46,4 +47,9 @@ type ProcessedEventsRepository interface {
 	IsProcessed(ctx context.Context, eventID uuid.UUID) (bool, error)
 	MarkProcessed(ctx context.Context, event *domain.ProcessedEvent) error
 	GetByID(ctx context.Context, eventID uuid.UUID) (*domain.ProcessedEvent, error)
+}
+
+type ProcessedCommandRepository interface {
+	HasBeenProcessed(ctx context.Context, commandID uuid.UUID) (bool, error)
+	MarkProcessed(ctx context.Context, commandID, sagaID uuid.UUID, commandName string) error
 }
